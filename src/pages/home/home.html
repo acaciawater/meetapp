@@ -17,7 +17,8 @@
 
   <button class="button" (click)="requestPermission()">Request Permission</button>
   <button class="button" (click)="getEC()">getEC</button>
-
+<button class="button" (click)="testClassVariable()">testClassVariable</button>
+<button class="button" (click)="toggleLogging()">toggle logging</button>
 </ion-header>
 
 
@@ -27,5 +28,8 @@
   <p>
     Algemene uitleg
   </p>
-<p> De EC is {{int}}</p>
+<p> De EC is {{this.value}}</p>
+<div id="divID">
+  bla
+</div>
 </ion-content>
