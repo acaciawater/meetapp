@@ -25,10 +25,10 @@ function objToString (obj) {
     var str = '';
     for (var p in obj) {
         if (obj.hasOwnProperty(p)) {
-            str += p + '::' + obj[p] + '\n';
+          str += p + ':' + obj[p] + ',';
         }
     }
-    return str;
+    return '{'+str+'}'+'\n';
 }
 
 class Record {
@@ -161,32 +161,22 @@ export class HomePage {
       }
     }
 
-    writeNewFile(path, file_name, data){
-      alert('init writeNewFile');
+    writeFile(path, file_name, data){
+      alert('init writeFile');
       // File.writeFile(path, file_name, data, false).then(_ => alert('writeFile success path = '+path+' file_name = '+file_name+' data = '+data)).catch(err => alert('writeFile '+JSON.stringify(err)+ ' path = '+path+' file_name = '+file_name+' data = '+data));
-      File.writeFile(path, file_name, data, false,).then(_ => alert('createFile success path = '+path+' file_name = '+file_name+'data = '+data)).catch(err => alert('createFile '+JSON.stringify(err)));
+      File.writeFile(path, file_name, data, {append:true}).then(_ => alert('createFile success path = '+path+' file_name = '+file_name+'data = '+data)).catch(err => alert('createFile '+JSON.stringify(err)));
     }
 
     newDirAndFile(base_path, dir_name, path, file_name, data){
       alert('init newDirAndFile');
-      File.createDir(base_path, dir_name, false).then(_ => this.writeNewFile(path, file_name, data)).catch(errCD => alert('createDir '+base_path+dir_name+' '+JSON.stringify(errCD)));
-    }
-
-    writeExistingFile(path, file_name, data){
-      alert('init writeExistingFile');
-      File.writeExistingFile(path, file_name, data,).then(_ => alert('writeExistingFile success'+'data = '+data)).catch(err => alert('writeExistingFile '+JSON.stringify(err)));
-    }
-
-    writeNewOrExistingFile(path, file_name, data){
-      alert('writeNewOrExistingFile');
-      File.checkFile(path+'/', file_name).then(_ => this.writeExistingFile(path, file_name, data)).catch(err => this.writeNewFile(path, file_name, data));
+      File.createDir(base_path, dir_name, false).then(_ => this.writeFile(path, file_name, data)).catch(err => alert('createDir '+base_path+dir_name+' '+JSON.stringify(err)));
     }
 
     saveMeasurement(){
       alert('init saveMeasurement with EC set to = '+ec_value);
       var record = new Record(ec_value, xy, uuid, record_sent);
       var data = record.getRecord();
-      File.checkDir(base_path, dir_name).then(_ => this.writeNewOrExistingFile(path, file_name, data)).catch(err => this.newDirAndFile(base_path, dir_name, path, file_name, data));
+      File.checkDir(base_path, dir_name).then(_ => this.writeFile(path, file_name, data)).catch(err => this.newDirAndFile(base_path, dir_name, path, file_name, data));
     }
     checkDir(){
       File.checkDir(base_path, dir_name).then(_ => alert(base_path+dir_name+' is found')).catch(err => alert('checkDir '+JSON.stringify(err)));
