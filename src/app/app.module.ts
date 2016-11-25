@@ -10,7 +10,7 @@ import { TabsPage } from '../pages/tabs/tabs';
     MyApp,
     AboutPage,
     HomePage,
-    TabsPage
+    TabsPage,
   ],
   imports: [
     IonicModule.forRoot(MyApp)
