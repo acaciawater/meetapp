@@ -13,8 +13,10 @@ text-align: center;
 
 #sensor_connected{}
 .measurement{}
+
+.value{}
 #ec_value{}
-#tmp_value{}
+#temperature_value{}
 .unit{}
 .big_button{
   color: white;
@@ -24,4 +26,8 @@ text-align: center;
   border: none;
   background-color: blue;
   cursor:pointer;
+}
+
+#toggleStop{
+  display: none;
 }

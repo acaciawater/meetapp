@@ -5,8 +5,9 @@ import { File } from 'ionic-native';
 declare var serial;
 declare var cordova: any;
 
-var tmp_ec_value = '';
+var tempor_values = '';
 var ec_value = '';
+var temperature_value = '';
 var xy = '';
 var uuid = '';
 var record_sent = false;
@@ -33,11 +34,13 @@ function objToString (obj) {
 
 class Record {
   ec: string;
+  tmp: string;
   xy: string;
   uuid: string;
   record_sent: boolean;
-  constructor(ec_value:string, xy:string, uuid:string, record_sent:boolean){
+  constructor(ec_value:string,temperature_value:string, xy:string, uuid:string, record_sent:boolean){
     this.ec = ec_value;
+    this.tmp = temperature_value;
     this.xy = xy;
     this.uuid = uuid;
     this.record_sent = record_sent;
@@ -45,6 +48,7 @@ class Record {
   getRecord(){
     var record = new Object();
     record['ec'] = this.ec;
+    record['tmp'] = this.tmp;
     record['xy'] = this.xy;
     record['uuid'] = this.uuid;
     record['record_sent'] = this.record_sent;
@@ -52,10 +56,29 @@ class Record {
   }
 }
 
-function displayValue(value){
-  var box = document.getElementById('ec_value');
-  box.innerHTML = value;
+function displayValue(ec_value, temperature_value){
+  var ec = document.getElementById('ec_value');
+  ec.innerHTML = ec_value;
+  var tmp = document.getElementById('temperature_value');
+  tmp.innerHTML =  temperature_value;
     }
+
+function toggleLogging() {
+  if (is_logging == false){
+    is_logging = true;
+    var ss = document.getElementById('startStop');
+    ss.innerHTML = 'Stop';
+    alert('logging on');
+    serial.write("R\r\n");
+  }
+  else{
+    is_logging = false;
+    var ss = document.getElementById('startStop');
+    ss.innerHTML = 'Start';
+    alert('logging off');
+  }
+}
+
 
 @Component({
   selector: 'page-home',
@@ -85,8 +108,9 @@ export class HomePage {
       };
     }
 
-  requestPermission() {
+  startStop() {
     ec_value = '';
+    if (is_logging == false){
     serial.requestPermission({vid: 9025, pid: 32845, driver: 'CdcAcmSerialDriver'},
     // if permission is granted
     function success(){
@@ -103,12 +127,14 @@ export class HomePage {
               // 2 verwerk deze data
               var view = new Uint8Array(data);
               var s = String.fromCharCode.apply(String,view);
-              tmp_ec_value += s;
-              displayValue(ec_value);
+              tempor_values += s;
               // 4 als string klaar is
               if (s.endsWith('\n')){
-                ec_value = tmp_ec_value
-                tmp_ec_value = ''
+                var split_values = tempor_values.split(',')
+                temperature_value = split_values[0]
+                ec_value = split_values[1].replace('\r\n','')
+                displayValue(ec_value,temperature_value);
+                tempor_values = ''
                 // 5 en als logging aan is, stuur dan nog een 'R'
                 if (is_logging){
                   serial.write("R\r\n")
@@ -120,6 +146,7 @@ export class HomePage {
               alert(evt);
             }
            );
+           toggleLogging();
         }, function error(evt){
           alert(evt);
         }
@@ -129,37 +156,12 @@ export class HomePage {
       alert(evt);
     },
     );
+  }
+  else{
+     toggleLogging();
+  }
 }
 
-    getEC() {
-      serial.write("STATUS\r\n",
-        function success(){alert('Succesfully written something')},
-        function error(status){alert('Failed to write'+status)});
-
-      // serial.read(
-      //   function success(buffer){alert('Succesfully reading')},
-      //   function error(){'Failed reading'});
-    }
-
-    testClassVariable() {
-      var s = new String('PAPAPAPAP');
-      this.value+=s;
-      displayValue(this.value);
-    }
-
-    // toggleLogging(){alert(is_logging)}
-
-    toggleLogging() {
-      if (is_logging == false){
-        is_logging = true;
-        alert('logging on');
-        serial.write("R\r\n")
-      }
-      else{
-        is_logging = false;
-        alert('logging off');
-      }
-    }
 
     writeFile(path, file_name, data){
       alert('init writeFile');
@@ -174,7 +176,7 @@ export class HomePage {
 
     saveMeasurement(){
       alert('init saveMeasurement with EC set to = '+ec_value);
-      var record = new Record(ec_value, xy, uuid, record_sent);
+      var record = new Record(ec_value, temperature_value, xy, uuid, record_sent);
       var data = record.getRecord();
       File.checkDir(base_path, dir_name).then(_ => this.writeFile(path, file_name, data)).catch(err => this.newDirAndFile(base_path, dir_name, path, file_name, data));
     }
@@ -187,4 +189,5 @@ export class HomePage {
     alertFileContents(){
       File.readAsText(path+'/', file_name).then(succ => alert('readAsText '+path+'/'+file_name+' '+JSON.stringify(succ))).catch(err => alert('readAsText '+path+'/'+file_name+' '+JSON.stringify(err)))
     }
+
 }

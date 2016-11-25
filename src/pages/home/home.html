@@ -10,24 +10,20 @@
     <div class = 'main_title margin'>Acacia Water</div>
     <div id = 'sensor_connected' class= 'margin'>Sensor Verbonden</div>
       <div class="measurement margin'">
-        <div id="ec_value" class='margin'>0000</div>
+        <div id="ec_value" class='margin value'>0000</div>
         <div class="unit  margin">ms/cm2</div>
       </div>
       <div class="measurement margin">
-        <div id="tmp_value" class='margin'>26.3</div>
+        <div id="temperature_value" class='margin value'>26.3</div>
         <div class='unit margin'>Celsius</div>
       </div>
-      <button class="big_button" (click)="toggleLogging()">Start</button>
-      <button class="big_button" (click)="toggleLogging()">Versturen</button>
+      <button id = 'startStop' class="big_button" (click)="startStop()">Start</button>
+      <button class="big_button" (click)="saveMeasurement()">Versturen</button>
 
-    <!-- <button class="button" (click)="requestPermission()">Request Permission</button>
-    <button class="button" (click)="getEC()">getEC</button>
-    <button class="button" (click)="testClassVariable()">testClassVariable</button>
-    <button class="button" (click)="saveMeasurement()">save measurement</button>
+    
     <button class="button" (click)="checkDir()">checkDir</button>
     <button class="button" (click)="checkFile()">checkFile</button>
     <button class="button" (click)="alertFileContents()">alertFileContents</button>
-    <button class="button" (click)="requestPermission()">Request Permission</button> -->
 
   </ion-content>
 
