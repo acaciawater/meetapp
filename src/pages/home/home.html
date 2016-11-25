@@ -1,8 +1,46 @@
 <ion-header>
+  <!-- <ion-navbar>
+    <ion-title>Home</ion-title>
+  </ion-navbar> -->
+
+</ion-header>
+
+
+  <ion-content padding>
+    <div class = 'main_title margin'>Acacia Water</div>
+    <div id = 'sensor_connected' class= 'margin'>Sensor Verbonden</div>
+      <div class="measurement margin'">
+        <div id="ec_value" class='margin'>0000</div>
+        <div class="unit  margin">ms/cm2</div>
+      </div>
+      <div class="measurement margin">
+        <div id="tmp_value" class='margin'>26.3</div>
+        <div class='unit margin'>Celsius</div>
+      </div>
+      <button class="big_button" (click)="toggleLogging()">Start</button>
+      <button class="big_button" (click)="toggleLogging()">Opslaan</button>
+
+    <!-- <button class="button" (click)="requestPermission()">Request Permission</button>
+    <button class="button" (click)="getEC()">getEC</button>
+    <button class="button" (click)="testClassVariable()">testClassVariable</button>
+    <button class="button" (click)="saveMeasurement()">save measurement</button>
+    <button class="button" (click)="checkDir()">checkDir</button>
+    <button class="button" (click)="checkFile()">checkFile</button>
+    <button class="button" (click)="alertFileContents()">alertFileContents</button>
+    <button class="button" (click)="requestPermission()">Request Permission</button> -->
+
+  </ion-content>
+
+
+
+
+<!--
+<ion-header>
   <ion-navbar>
     <ion-title>Home</ion-title>
   </ion-navbar>
-  <!-- <ion-nav-view>
+
+  <ion-nav-view>
     <ion-view>
       <ion-nav-buttons side="primary">
         <button class="button" ng-click="doSomething()">
@@ -13,7 +51,7 @@
         Some super content here!
       </ion-content>
     </ion-view>
-  </ion-nav-view> -->
+  </ion-nav-view>
 
   <button class="button" (click)="requestPermission()">Request Permission</button>
   <button class="button" (click)="getEC()">getEC</button>
@@ -36,4 +74,4 @@
 <div id="divID">
   bla
 </div>
-</ion-content>
+</ion-content> -->

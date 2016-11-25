@@ -53,7 +53,7 @@ class Record {
 }
 
 function displayValue(value){
-  var box = document.getElementById('divID');
+  var box = document.getElementById('ec_value');
   box.innerHTML = value;
     }
 
