@@ -16,6 +16,7 @@ var dir_name = '';
 var file_name = '';
 var is_logging = false;
 var path = '';
+var datetime = 'today'
 
 // var base_path:string = cordova.file.dataDirectory;
 // var dir_name = 'AcaciaData';
@@ -33,12 +34,14 @@ function objToString (obj) {
 }
 
 class Record {
+  datetime: string;
   ec: string;
   tmp: string;
   xy: string;
   uuid: string;
   record_sent: boolean;
-  constructor(ec_value:string,temperature_value:string, xy:string, uuid:string, record_sent:boolean){
+  constructor(datetime:string, ec_value:string,temperature_value:string, xy:string, uuid:string, record_sent:boolean){
+    this.datetime = datetime;
     this.ec = ec_value;
     this.tmp = temperature_value;
     this.xy = xy;
@@ -47,6 +50,7 @@ class Record {
   }
   getRecord(){
     var record = new Object();
+    record['datetime'] = this.datetime;
     record['ec'] = this.ec;
     record['tmp'] = this.tmp;
     record['xy'] = this.xy;
@@ -99,7 +103,7 @@ export class HomePage {
       function onDeviceReady() {
         alert("Device Ready");
         uuid = '12345';
-        xy = '(x,y)';
+        xy = '(x;y)';
         record_sent = false;
         base_path = cordova.file.dataDirectory;
         dir_name = 'AcaciaData';
@@ -176,7 +180,7 @@ export class HomePage {
 
     saveMeasurement(){
       alert('init saveMeasurement with EC set to = '+ec_value);
-      var record = new Record(ec_value, temperature_value, xy, uuid, record_sent);
+      var record = new Record(datetime, ec_value, temperature_value, xy, uuid, record_sent);
       var data = record.getRecord();
       File.checkDir(base_path, dir_name).then(_ => this.writeFile(path, file_name, data)).catch(err => this.newDirAndFile(base_path, dir_name, path, file_name, data));
     }
