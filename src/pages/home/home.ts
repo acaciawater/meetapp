@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { NavController } from 'ionic-angular';
 import { File } from 'ionic-native';
+import { Geolocation } from 'ionic-native';
+
 
 declare var serial;
 declare var cordova: any;
@@ -32,6 +34,7 @@ function objToString (obj) {
     }
     return '{'+str+'}'+'\n';
 }
+
 
 class Record {
   datetime: string;
@@ -103,7 +106,7 @@ export class HomePage {
       function onDeviceReady() {
         alert("Device Ready");
         uuid = '12345';
-        xy = '(x;y)';
+        // xy = '(x;y)';
         record_sent = false;
         base_path = cordova.file.dataDirectory;
         dir_name = 'AcaciaData';
@@ -166,6 +169,17 @@ export class HomePage {
   }
 }
 
+    getCurrentPosition(){
+      Geolocation.getCurrentPosition().then((resp) => {
+        alert(lat+lon)
+        var lat = resp.coords.latitude
+        var lon = resp.coords.longitude
+        xy = [lat,lon].toString()
+        this.saveMeasurement()
+      }).catch((error) => {
+        alert('Error getting location '+ error);
+      });
+    }
 
     writeFile(path, file_name, data){
       alert('init writeFile');
