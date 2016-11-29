@@ -18,7 +18,7 @@ var dir_name = '';
 var file_name = '';
 var is_logging = false;
 var path = '';
-var datetime = 'today'
+// var datetime = ''
 
 // var base_path:string = cordova.file.dataDirectory;
 // var dir_name = 'AcaciaData';
@@ -29,12 +29,25 @@ function objToString (obj) {
     var str = '';
     for (var p in obj) {
         if (obj.hasOwnProperty(p)) {
-          str += p + ':' + obj[p] + ',';
+          str += p + ';' + obj[p] + ',';
         }
     }
     return '{'+str+'}'+'\n';
 }
 
+function getCurrentDateTime(){
+  var unix_timestamp = + new Date()
+  var a = new Date(unix_timestamp);
+  var months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+  var year = a.getFullYear();
+  var month = a.getMonth()+1;
+  var date = a.getDate();
+  var hour = a.getHours();
+  var min = a.getMinutes();
+  var sec = a.getSeconds();
+  var time = date + '-' + month + '-' + year + ' ' + hour + ':' + min + ':' + sec ;
+  return time;
+}
 
 class Record {
   datetime: string;
@@ -174,7 +187,7 @@ export class HomePage {
         alert(lat+lon)
         var lat = resp.coords.latitude
         var lon = resp.coords.longitude
-        xy = [lat,lon].toString()
+        xy = lat.toString()+':'+lon.toString()
         this.saveMeasurement()
       }).catch((error) => {
         alert('Error getting location '+ error);
@@ -194,6 +207,7 @@ export class HomePage {
 
     saveMeasurement(){
       alert('init saveMeasurement with EC set to = '+ec_value);
+      var datetime = getCurrentDateTime()
       var record = new Record(datetime, ec_value, temperature_value, xy, uuid, record_sent);
       var data = record.getRecord();
       File.checkDir(base_path, dir_name).then(_ => this.writeFile(path, file_name, data)).catch(err => this.newDirAndFile(base_path, dir_name, path, file_name, data));
