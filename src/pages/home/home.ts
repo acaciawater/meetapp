@@ -2,11 +2,12 @@ import { Component } from '@angular/core';
 import { NavController } from 'ionic-angular';
 import { File } from 'ionic-native';
 import { Geolocation } from 'ionic-native';
-
+import { Device } from 'ionic-native';
 
 declare var serial;
 declare var cordova: any;
 
+var first_measurement_done = false
 var tempor_values = '';
 var ec_value = '';
 var temperature_value = '';
@@ -47,6 +48,12 @@ function getCurrentDateTime(){
   var sec = a.getSeconds();
   var time = date + '-' + month + '-' + year + ' ' + hour + ':' + min + ':' + sec ;
   return time;
+}
+
+function enableSendButton(){
+  var send_record_button = <HTMLInputElement> document.getElementById('send_record')
+  send_record_button.disabled = false;
+  send_record_button.style.background = 'green';
 }
 
 class Record {
@@ -118,7 +125,7 @@ export class HomePage {
       // console.log(this.box);
       function onDeviceReady() {
         alert("Device Ready");
-        uuid = '12345';
+        uuid = Device.device.uuid;
         // xy = '(x;y)';
         record_sent = false;
         base_path = cordova.file.dataDirectory;
@@ -155,6 +162,12 @@ export class HomePage {
                 ec_value = split_values[1].replace('\r\n','')
                 displayValue(ec_value,temperature_value);
                 tempor_values = ''
+
+                // if (first_measurement_done == false) {
+                //   enableSendButton()
+                //   first_measurement_done = true
+                // }
+
                 // 5 en als logging aan is, stuur dan nog een 'R'
                 if (is_logging){
                   serial.write("R\r\n")

@@ -44,7 +44,12 @@ function displayHistory(history){
     td_date.innerHTML = datetime
     td_tmp.innerHTML = tmp
     td_ec.innerHTML = ec
-    td_sent.innerHTML = sent
+    if (sent){
+      td_sent.innerHTML = 'Ja'
+    }
+    else {
+      td_sent.innerHTML = 'Nee'
+    }
 
     }
   }
