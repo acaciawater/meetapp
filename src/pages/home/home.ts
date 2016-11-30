@@ -94,11 +94,11 @@ function getCurrentDateTime(){
   return time;
 }
 
-// function enableSendButton(){
-//   var send_record_button = <HTMLInputElement> document.getElementById('send_record')
-//   send_record_button.disabled = false;
-//   send_record_button.style.background = 'green';
-// }
+function enableSendButton(){
+  var send_record_button = <HTMLInputElement> document.getElementById('send_record')
+  send_record_button.disabled = false;
+  send_record_button.style.background = 'green';
+}
 
 function displayValue(ec_value, temperature_value){
   var ec = document.getElementById('ec_value');
@@ -177,7 +177,7 @@ export class HomePage {
                 tempor_values = ''
 
                 if (complete_input.indexOf('Water') >= 0){
-                  ec_sensor_id = complete_input
+                  ec_sensor_id = complete_input.replace(/\s/g,'')
                   displayValue('WATER', ec_sensor_id)
                 }
                 else if (complete_input.indexOf(',') >= 0){
@@ -185,6 +185,7 @@ export class HomePage {
                   temperature_value = split_values[0]
                   ec_value = split_values[1].replace('\r\n','')
                   displayValue(ec_value,temperature_value)
+                  enableSendButton()
                 }
                 if (is_logging){
                   serial.write("R\r\n")

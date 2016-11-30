@@ -18,56 +18,5 @@
         <div class='unit margin'>Celsius</div>
       </div>
       <button id = 'startStop' class="big_button" (click)="startStop()">Start</button>
-      <button id = 'send_record' class="big_button" (click)="getCurrentPosition()">Versturen</button>
-
-    <button class="button" (click)="checkDir()">checkDir</button>
-    <button class="button" (click)="checkFile()">checkFile</button>
-    <button class="button" (click)="alertFileContents()">alertFileContents</button>
-
-
+      <button id = 'send_record' class="big_button" disabled="true" (click)="getCurrentPosition()">Versturen</button>
   </ion-content>
-
-
-
-
-<!--
-<ion-header>
-  <ion-navbar>
-    <ion-title>Home</ion-title>
-  </ion-navbar>
-
-  <ion-nav-view>
-    <ion-view>
-      <ion-nav-buttons side="primary">
-        <button class="button" ng-click="doSomething()">
-          I'm a button on the primary of the navbar!
-        </button>
-      </ion-nav-buttons>
-      <ion-content>
-        Some super content here!
-      </ion-content>
-    </ion-view>
-  </ion-nav-view>
-
-  <button class="button" (click)="requestPermission()">Request Permission</button>
-  <button class="button" (click)="getEC()">getEC</button>
-<button class="button" (click)="testClassVariable()">testClassVariable</button>
-<button class="button" (click)="toggleLogging()">toggle logging</button>
-<button class="button" (click)="saveMeasurement()">save measurement</button>
-<button class="button" (click)="checkDir()">checkDir</button>
-<button class="button" (click)="checkFile()">checkFile</button>
-<button class="button" (click)="alertFileContents()">alertFileContents</button>
-</ion-header>
-
-
-
-<ion-content padding>
-  <h2>Acacia Meet App</h2>
-  <p>
-    Algemene uitleg
-  </p>
-<p> De EC is {{this.value}}</p>
-<div id="divID">
-  bla
-</div>
-</ion-content> -->
