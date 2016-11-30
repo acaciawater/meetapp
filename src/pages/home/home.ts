@@ -12,7 +12,11 @@ var tempor_values = '';
 var ec_value = '';
 var temperature_value = '';
 var xy = '';
+var horizontal_accuracy = '';
+var altitude = '';
+var vertical_accuracy = '';
 var uuid = '';
+var ec_sensor_id = '';
 var record_sent = false;
 var base_path:string = '';
 var dir_name = '';
@@ -25,6 +29,43 @@ var path = '';
 // var dir_name = 'AcaciaData';
 // var file_name = 'measurement_table.csv';
 // var path = base_path+dir_name;
+
+class Record {
+  sensor_id:string;
+  datetime: string;
+  ec: string;
+  tmp: string;
+  xy: string;
+  horizontal_accuracy:string;
+  altitude: string;
+  vertical_accuracy:string;
+  uuid: string;
+  record_sent: boolean;
+  constructor(  sensor_id:string, datetime:string, ec_value:string,temperature_value:string, xy:string,
+                horizontal_accuracy:string,altitude: string,vertical_accuracy:string, uuid:string, record_sent:boolean){
+    this.sensor_id = sensor_id;
+    this.datetime = datetime;
+    this.ec = ec_value;
+    this.tmp = temperature_value;
+    this.xy = xy;
+    this.horizontal_accuracy = horizontal_accuracy;
+    this.altitude = altitude;
+    this.vertical_accuracy = vertical_accuracy;
+    this.uuid = uuid;
+    this.record_sent = record_sent;
+  }
+  getRecord(){
+    var record = new Object();
+    record['sensor_id'] = this.sensor_id;
+    record['datetime'] = this.datetime;
+    record['ec'] = this.ec;
+    record['tmp'] = this.tmp;
+    record['xy'] = this.xy;
+    record['uuid'] = this.uuid;
+    record['record_sent'] = this.record_sent;
+    return objToString(record);
+  }
+}
 
 function objToString (obj) {
     var str = '';
@@ -50,38 +91,11 @@ function getCurrentDateTime(){
   return time;
 }
 
-function enableSendButton(){
-  var send_record_button = <HTMLInputElement> document.getElementById('send_record')
-  send_record_button.disabled = false;
-  send_record_button.style.background = 'green';
-}
-
-class Record {
-  datetime: string;
-  ec: string;
-  tmp: string;
-  xy: string;
-  uuid: string;
-  record_sent: boolean;
-  constructor(datetime:string, ec_value:string,temperature_value:string, xy:string, uuid:string, record_sent:boolean){
-    this.datetime = datetime;
-    this.ec = ec_value;
-    this.tmp = temperature_value;
-    this.xy = xy;
-    this.uuid = uuid;
-    this.record_sent = record_sent;
-  }
-  getRecord(){
-    var record = new Object();
-    record['datetime'] = this.datetime;
-    record['ec'] = this.ec;
-    record['tmp'] = this.tmp;
-    record['xy'] = this.xy;
-    record['uuid'] = this.uuid;
-    record['record_sent'] = this.record_sent;
-    return objToString(record);
-  }
-}
+// function enableSendButton(){
+//   var send_record_button = <HTMLInputElement> document.getElementById('send_record')
+//   send_record_button.disabled = false;
+//   send_record_button.style.background = 'green';
+// }
 
 function displayValue(ec_value, temperature_value){
   var ec = document.getElementById('ec_value');
@@ -96,6 +110,9 @@ function toggleLogging() {
     var ss = document.getElementById('startStop');
     ss.innerHTML = 'Stop';
     alert('logging on');
+    if (ec_sensor_id == ''){
+      serial.write("DEVICE\r\n");
+    }
     serial.write("R\r\n");
   }
   else{
@@ -116,13 +133,10 @@ function toggleLogging() {
 export class HomePage {
 
   public value = 'A';
-  public box = null;
 
   constructor(
     public navCtrl: NavController,) {
       document.addEventListener("deviceready", onDeviceReady, false);
-      // this.box = document.getElementById('divID');
-      // console.log(this.box);
       function onDeviceReady() {
         alert("Device Ready");
         uuid = Device.device.uuid;
@@ -155,20 +169,20 @@ export class HomePage {
               var view = new Uint8Array(data);
               var s = String.fromCharCode.apply(String,view);
               tempor_values += s;
-              // 4 als string klaar is
               if (s.endsWith('\n')){
-                var split_values = tempor_values.split(',')
-                temperature_value = split_values[0]
-                ec_value = split_values[1].replace('\r\n','')
-                displayValue(ec_value,temperature_value);
+                var complete_input = tempor_values
                 tempor_values = ''
 
-                // if (first_measurement_done == false) {
-                //   enableSendButton()
-                //   first_measurement_done = true
-                // }
-
-                // 5 en als logging aan is, stuur dan nog een 'R'
+                if (complete_input.indexOf('Water') >= 0){
+                  ec_sensor_id = complete_input
+                  displayValue('WATER', ec_sensor_id)
+                }
+                else if (complete_input.indexOf(',') >= 0){
+                  var split_values = complete_input.split(',')
+                  temperature_value = split_values[0]
+                  ec_value = split_values[1].replace('\r\n','')
+                  displayValue(ec_value,temperature_value)
+                }
                 if (is_logging){
                   serial.write("R\r\n")
                 }
@@ -197,10 +211,12 @@ export class HomePage {
 
     getCurrentPosition(){
       Geolocation.getCurrentPosition().then((resp) => {
-        alert(lat+lon)
+        // alert(lat+lon)
         var lat = resp.coords.latitude
         var lon = resp.coords.longitude
-        xy = lat.toString()+':'+lon.toString()
+        var accuracy = resp.coords.accuracy
+        xy = lat.toString()+':'+lon.toString()+':'+accuracy.toString()
+        
         this.saveMeasurement()
       }).catch((error) => {
         alert('Error getting location '+ error);
@@ -221,7 +237,7 @@ export class HomePage {
     saveMeasurement(){
       alert('init saveMeasurement with EC set to = '+ec_value);
       var datetime = getCurrentDateTime()
-      var record = new Record(datetime, ec_value, temperature_value, xy, uuid, record_sent);
+      var record = new Record(ec_sensor_id, datetime, ec_value, temperature_value, xy,horizontal_accuracy,altitude,vertical_accuracy, uuid, record_sent);
       var data = record.getRecord();
       File.checkDir(base_path, dir_name).then(_ => this.writeFile(path, file_name, data)).catch(err => this.newDirAndFile(base_path, dir_name, path, file_name, data));
     }
@@ -236,3 +252,68 @@ export class HomePage {
     }
 
 }
+
+// startStop() {
+//   ec_value = '';
+//   if (is_logging == false){
+//   serial.requestPermission({vid: 9025, pid: 32845, driver: 'CdcAcmSerialDriver'},
+//   // if permission is granted
+//   function success(){
+//     var opts = {"baudRate":9600, "dataBits":8, "stopBits":1, "parity":0, "dtr":true, 'rts':true}
+//     //  open serial port
+//     serial.open(opts,
+//       // if port is succsefully opened
+//       function success(){
+//         alert("Port Succesfully Opened");
+//         // register the read callback
+//          serial.registerReadCallback(
+//            function success(data){
+//             // 1 er is data binnen gekomen
+//             // 2 verwerk deze data
+//             var view = new Uint8Array(data);
+//             var s = String.fromCharCode.apply(String,view);
+//             tempor_values += s;
+//             if (s.endsWith('\n')){
+//
+//
+//               var complete_input = tempor_values
+//               tempor_values = ''
+//               // if (first_measurement_done == false) {
+//               //   enableSendButton()
+//               //   first_measurement_done = true
+//               // }
+//               }
+//               if (complete_input.indexOf('Water')){
+//                 ec_sensor_id = complete_input
+//                 displayValue('WATER', complete_input)
+//               }
+//               if (complete_input.indexOf(',')){
+//                 var split_values = complete_input.split(',')
+//                 temperature_value = split_values[0]
+//                 ec_value = split_values[1].replace('\r\n','')
+//                 displayValue(ec_value,temperature_value)
+//               }
+//               if (is_logging){
+//                 serial.write("R\r\n")
+//             }
+//           },
+//         // error attaching the callback
+//           function error(evt){
+//             alert(evt);
+//           }
+//          );
+//          toggleLogging();
+//       }, function error(evt){
+//         alert(evt);
+//       }
+//     );
+//   },
+//   function error(evt){
+//     alert(evt);
+//   },
+//   );
+// }
+// else{
+//    toggleLogging();
+// }
+// }
