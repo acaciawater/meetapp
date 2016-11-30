@@ -8,13 +8,16 @@
 
   <ion-content padding>
     <div class = 'main_title margin'>Acacia Water</div>
-    <div id = 'sensor_connected' class= 'margin'>Sensor Verbonden</div>
       <div class="measurement margin'">
-        <div id="ec_value" class='margin value'>0000</div>
+        <div class="value_container">
+          <div id="ec_value" class='value'>0000</div>
+        </div>
         <div class="unit  margin">ms/cm2</div>
       </div>
       <div class="measurement margin">
-        <div id="temperature_value" class='margin value'>26.3</div>
+        <div class="value_container">
+          <div id="temperature_value" class='value'>26.3</div>
+        </div>
         <div class='unit margin'>Celsius</div>
       </div>
       <button id = 'startStop' class="big_button" (click)="startStop()">Start</button>

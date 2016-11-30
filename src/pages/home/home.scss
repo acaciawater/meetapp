@@ -1,18 +1,22 @@
 ion-content {
 text-align: center;
-
 }
 
 .main_title {
-
 }
 
 .margin{
   margin: 35px 35px;
 }
 
-#sensor_connected{}
 .measurement{}
+
+.value_container{
+  background-color: yellow;
+  display: inline-block;
+  width: 120px;
+  height: 30px;
+}
 
 .value{}
 #ec_value{}
@@ -31,6 +35,7 @@ text-align: center;
 #send_record{
 background-color: grey;
 }
+
 #toggleStop{
   display: none;
 }
