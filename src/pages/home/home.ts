@@ -11,10 +11,10 @@ var first_measurement_done = false
 var tempor_values = '';
 var ec_value = '';
 var temperature_value = '';
-var xy = '';
-var horizontal_accuracy = '';
-var altitude = '';
-var vertical_accuracy = '';
+var latlon = '';
+var horizontal_accuracy = null;
+var altitude = null;
+var vertical_accuracy = null;
 var uuid = '';
 var ec_sensor_id = '';
 var record_sent = false;
@@ -35,19 +35,19 @@ class Record {
   datetime: string;
   ec: string;
   tmp: string;
-  xy: string;
-  horizontal_accuracy:string;
-  altitude: string;
-  vertical_accuracy:string;
+  latlon: string;
+  horizontal_accuracy:number;
+  altitude: number;
+  vertical_accuracy:number;
   uuid: string;
   record_sent: boolean;
-  constructor(  sensor_id:string, datetime:string, ec_value:string,temperature_value:string, xy:string,
-                horizontal_accuracy:string,altitude: string,vertical_accuracy:string, uuid:string, record_sent:boolean){
+  constructor(  sensor_id:string, datetime:string, ec_value:string,temperature_value:string, latlon:string,
+                horizontal_accuracy:number,altitude: number,vertical_accuracy:number, uuid:string, record_sent:boolean){
     this.sensor_id = sensor_id;
     this.datetime = datetime;
     this.ec = ec_value;
     this.tmp = temperature_value;
-    this.xy = xy;
+    this.latlon = latlon;
     this.horizontal_accuracy = horizontal_accuracy;
     this.altitude = altitude;
     this.vertical_accuracy = vertical_accuracy;
@@ -60,7 +60,10 @@ class Record {
     record['datetime'] = this.datetime;
     record['ec'] = this.ec;
     record['tmp'] = this.tmp;
-    record['xy'] = this.xy;
+    record['latlon'] = this.latlon;
+    record['horizontal_accuracy'] = this.horizontal_accuracy;
+    record['altitude'] = this.altitude;
+    record['vertical_accuracy'] = this.vertical_accuracy;
     record['uuid'] = this.uuid;
     record['record_sent'] = this.record_sent;
     return objToString(record);
@@ -140,7 +143,7 @@ export class HomePage {
       function onDeviceReady() {
         alert("Device Ready");
         uuid = Device.device.uuid;
-        // xy = '(x;y)';
+        // latlon = '(x;y)';
         record_sent = false;
         base_path = cordova.file.dataDirectory;
         dir_name = 'AcaciaData';
@@ -214,12 +217,15 @@ export class HomePage {
         // alert(lat+lon)
         var lat = resp.coords.latitude
         var lon = resp.coords.longitude
-        var accuracy = resp.coords.accuracy
-        xy = lat.toString()+':'+lon.toString()+':'+accuracy.toString()
-        
+        latlon = lat.toString()+':'+lon.toString()
+        horizontal_accuracy = resp.coords.accuracy
+        altitude = resp.coords.altitude
+        vertical_accuracy = resp.coords.altitudeAccuracy
+        // displayValue(horizontal_accuracy,altitude+vertical_accuracy)
         this.saveMeasurement()
+
       }).catch((error) => {
-        alert('Error getting location '+ error);
+        alert('Geen GPS signaal.\n'+ error);
       });
     }
 
@@ -237,7 +243,7 @@ export class HomePage {
     saveMeasurement(){
       alert('init saveMeasurement with EC set to = '+ec_value);
       var datetime = getCurrentDateTime()
-      var record = new Record(ec_sensor_id, datetime, ec_value, temperature_value, xy,horizontal_accuracy,altitude,vertical_accuracy, uuid, record_sent);
+      var record = new Record(ec_sensor_id, datetime, ec_value, temperature_value, latlon,horizontal_accuracy,altitude,vertical_accuracy, uuid, record_sent);
       var data = record.getRecord();
       File.checkDir(base_path, dir_name).then(_ => this.writeFile(path, file_name, data)).catch(err => this.newDirAndFile(base_path, dir_name, path, file_name, data));
     }
@@ -252,68 +258,3 @@ export class HomePage {
     }
 
 }
-
-// startStop() {
-//   ec_value = '';
-//   if (is_logging == false){
-//   serial.requestPermission({vid: 9025, pid: 32845, driver: 'CdcAcmSerialDriver'},
-//   // if permission is granted
-//   function success(){
-//     var opts = {"baudRate":9600, "dataBits":8, "stopBits":1, "parity":0, "dtr":true, 'rts':true}
-//     //  open serial port
-//     serial.open(opts,
-//       // if port is succsefully opened
-//       function success(){
-//         alert("Port Succesfully Opened");
-//         // register the read callback
-//          serial.registerReadCallback(
-//            function success(data){
-//             // 1 er is data binnen gekomen
-//             // 2 verwerk deze data
-//             var view = new Uint8Array(data);
-//             var s = String.fromCharCode.apply(String,view);
-//             tempor_values += s;
-//             if (s.endsWith('\n')){
-//
-//
-//               var complete_input = tempor_values
-//               tempor_values = ''
-//               // if (first_measurement_done == false) {
-//               //   enableSendButton()
-//               //   first_measurement_done = true
-//               // }
-//               }
-//               if (complete_input.indexOf('Water')){
-//                 ec_sensor_id = complete_input
-//                 displayValue('WATER', complete_input)
-//               }
-//               if (complete_input.indexOf(',')){
-//                 var split_values = complete_input.split(',')
-//                 temperature_value = split_values[0]
-//                 ec_value = split_values[1].replace('\r\n','')
-//                 displayValue(ec_value,temperature_value)
-//               }
-//               if (is_logging){
-//                 serial.write("R\r\n")
-//             }
-//           },
-//         // error attaching the callback
-//           function error(evt){
-//             alert(evt);
-//           }
-//          );
-//          toggleLogging();
-//       }, function error(evt){
-//         alert(evt);
-//       }
-//     );
-//   },
-//   function error(evt){
-//     alert(evt);
-//   },
-//   );
-// }
-// else{
-//    toggleLogging();
-// }
-// }
