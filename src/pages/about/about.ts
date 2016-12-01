@@ -12,28 +12,12 @@ var path = ''
 function displayHistory(history){
   var row = history.split('\n')
   for (var line = row.length-2; line >= 0; line--){
-    alert('row = '+row)
-    alert('row length = '+row.length)
-    alert('line = '+line)
-    alert(' row = '+row[line])
-
-    var values = row[line].split(',')
+    var obj = JSON.parse(row[line])
     var table: HTMLTableElement = <HTMLTableElement> document.getElementById('history_table')
-    // var table = document.getElementById('history_table')
-
-    //
-    var datetime = values[1].split(';')[1]
-    var ec = values[2].split(';')[1]
-    var tmp = values[3].split(';')[1]
-    var sent =values[5].split(';')[1]
-    //
-    // alert(' values = '+values)
-    // alert('ec = '+ec)
-    // alert('tmp = '+tmp)
-    // alert('xy = '+xy)
-    // alert('uuid = '+uuid)
-    // alert('sent = '+sent)
-
+    var datetime = obj['date']
+    var ec = obj['ec']
+    var tmp = obj['tmp']
+    var sent = obj['record_sent']
     var tr = table.insertRow(1)
     var td_date = tr.insertCell(0)
     var td_tmp = tr.insertCell(1)
@@ -48,9 +32,8 @@ function displayHistory(history){
     else {
       td_sent.innerHTML = 'Nee'
     }
-
-    }
   }
+}
 
 @Component({
   selector: 'page-about',

@@ -73,18 +73,8 @@ class Record {
     record['vacc'] = this.vertical_accuracy;
     record['phone'] = this.uuid;
     record['record_sent'] = this.record_sent;
-    return objToString(record);
+    return JSON.stringify(record);
   }
-}
-
-function objToString (obj) {
-    var str = '';
-    for (var p in obj) {
-        if (obj.hasOwnProperty(p)) {
-          str += p + ':' + obj[p] + ',';
-        }
-    }
-    return '{'+str+'}'+'\n';
 }
 
 function getCurrentDateTime(){
@@ -97,7 +87,7 @@ function getCurrentDateTime(){
   var hour = a.getHours();
   var min = a.getMinutes();
   var sec = a.getSeconds();
-  var time = date + '-' + month + '-' + year + ' ' + hour + ';' + min + ';' + sec ;
+  var time = date + '-' + month + '-' + year + ' ' + hour + ':' + min + ':' + sec ;
   return time;
 }
 
@@ -240,6 +230,7 @@ export class HomePage {
 
     writeFile(path, file_name, data){
       alert('init writeFile');
+      data += '\n'
       var body = data
       var headers = '{}'
       // File.writeFile(path, file_name, data, false).then(_ => alert('writeFile success path = '+path+' file_name = '+file_name+' data = '+data)).catch(err => alert('writeFile '+JSON.stringify(err)+ ' path = '+path+' file_name = '+file_name+' data = '+data));
@@ -265,7 +256,7 @@ export class HomePage {
       File.checkFile(path+'/', file_name).then(_ => alert('checkFile '+path+file_name+' found')).catch(err => alert('checkFile '+path+'/'+file_name+' error ='+JSON.stringify(err)));
     }
     alertFileContents(){
-      File.readAsText(path+'/', file_name).then(succ => alert('readAsText '+path+'/'+file_name+' '+JSON.stringify(succ))).catch(err => alert('readAsText '+path+'/'+file_name+' '+JSON.stringify(err)))
+      File.readAsText(path+'/', file_name).then(succ => alert('readAsText '+path+'/'+file_name+' '+succ)).catch(err => alert('readAsText '+path+'/'+file_name+' '+JSON.stringify(err)))
     }
 
     fileParser(text){
