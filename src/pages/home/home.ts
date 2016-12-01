@@ -3,15 +3,18 @@ import { NavController } from 'ionic-angular';
 import { File } from 'ionic-native';
 import { Geolocation } from 'ionic-native';
 import { Device } from 'ionic-native';
+import { HTTP } from 'ionic-native';
 
 declare var serial;
 declare var cordova: any;
 
+var api_url = 'http://meet.acaciadata.com:8000/api/v1/meting/'
 var first_measurement_done = false
 var tempor_values = '';
 var ec_value = '';
 var temperature_value = '';
-var latlon = '';
+var lat = '';
+var lon = '';
 var horizontal_accuracy = null;
 var altitude = null;
 var vertical_accuracy = null;
@@ -31,23 +34,26 @@ var path = '';
 // var path = base_path+dir_name;
 
 class Record {
+
   sensor_id:string;
   datetime: string;
   ec: string;
   tmp: string;
-  latlon: string;
+  lat: string;
+  lon: string;
   horizontal_accuracy:number;
   altitude: number;
   vertical_accuracy:number;
   uuid: string;
   record_sent: boolean;
-  constructor(  sensor_id:string, datetime:string, ec_value:string,temperature_value:string, latlon:string,
+  constructor(  sensor_id:string, datetime:string, ec_value:string,temperature_value:string, lat:string, lon:string,
                 horizontal_accuracy:number,altitude: number,vertical_accuracy:number, uuid:string, record_sent:boolean){
     this.sensor_id = sensor_id;
     this.datetime = datetime;
     this.ec = ec_value;
     this.tmp = temperature_value;
-    this.latlon = latlon;
+    this.lat = lat;
+    this.lon = lon;
     this.horizontal_accuracy = horizontal_accuracy;
     this.altitude = altitude;
     this.vertical_accuracy = vertical_accuracy;
@@ -56,15 +62,16 @@ class Record {
   }
   getRecord(){
     var record = new Object();
-    record['sensor_id'] = this.sensor_id;
-    record['datetime'] = this.datetime;
+    record['sensor'] = this.sensor_id;
+    record['date'] = this.datetime;
     record['ec'] = this.ec;
     record['tmp'] = this.tmp;
-    record['latlon'] = this.latlon;
-    record['horizontal_accuracy'] = this.horizontal_accuracy;
-    record['altitude'] = this.altitude;
-    record['vertical_accuracy'] = this.vertical_accuracy;
-    record['uuid'] = this.uuid;
+    record['latitude'] = this.lat;
+    record['longitude'] = this.lon;
+    record['hacc'] = this.horizontal_accuracy;
+    record['elevation'] = this.altitude;
+    record['vacc'] = this.vertical_accuracy;
+    record['phone'] = this.uuid;
     record['record_sent'] = this.record_sent;
     return objToString(record);
   }
@@ -74,7 +81,7 @@ function objToString (obj) {
     var str = '';
     for (var p in obj) {
         if (obj.hasOwnProperty(p)) {
-          str += p + ';' + obj[p] + ',';
+          str += p + ':' + obj[p] + ',';
         }
     }
     return '{'+str+'}'+'\n';
@@ -90,7 +97,7 @@ function getCurrentDateTime(){
   var hour = a.getHours();
   var min = a.getMinutes();
   var sec = a.getSeconds();
-  var time = date + '-' + month + '-' + year + ' ' + hour + ':' + min + ':' + sec ;
+  var time = date + '-' + month + '-' + year + ' ' + hour + ';' + min + ';' + sec ;
   return time;
 }
 
@@ -216,9 +223,10 @@ export class HomePage {
     getCurrentPosition(){
       Geolocation.getCurrentPosition().then((resp) => {
         // alert(lat+lon)
-        var lat = resp.coords.latitude
-        var lon = resp.coords.longitude
-        latlon = lat.toString()+':'+lon.toString()
+        var latit = resp.coords.latitude
+        var longit = resp.coords.longitude
+        lat = latit.toString()
+        lon = longit.toString()
         horizontal_accuracy = resp.coords.accuracy
         altitude = resp.coords.altitude
         vertical_accuracy = resp.coords.altitudeAccuracy
@@ -232,8 +240,10 @@ export class HomePage {
 
     writeFile(path, file_name, data){
       alert('init writeFile');
+      var body = data
+      var headers = '{}'
       // File.writeFile(path, file_name, data, false).then(_ => alert('writeFile success path = '+path+' file_name = '+file_name+' data = '+data)).catch(err => alert('writeFile '+JSON.stringify(err)+ ' path = '+path+' file_name = '+file_name+' data = '+data));
-      File.writeFile(path, file_name, data, {append:true}).then(_ => alert('createFile success path = '+path+' file_name = '+file_name+'data = '+data)).catch(err => alert('createFile '+JSON.stringify(err)));
+      File.writeFile(path, file_name, data, {append:true}).then(_ => alert('file written')).catch(err => alert('createFile '+JSON.stringify(err)));
     }
 
     newDirAndFile(base_path, dir_name, path, file_name, data){
@@ -244,7 +254,7 @@ export class HomePage {
     saveMeasurement(){
       alert('init saveMeasurement with EC set to = '+ec_value);
       var datetime = getCurrentDateTime()
-      var record = new Record(ec_sensor_id, datetime, ec_value, temperature_value, latlon,horizontal_accuracy,altitude,vertical_accuracy, uuid, record_sent);
+      var record = new Record(ec_sensor_id, datetime, ec_value, temperature_value, lat, lon,horizontal_accuracy,altitude,vertical_accuracy, uuid, record_sent);
       var data = record.getRecord();
       File.checkDir(base_path, dir_name).then(_ => this.writeFile(path, file_name, data)).catch(err => this.newDirAndFile(base_path, dir_name, path, file_name, data));
     }
@@ -258,4 +268,12 @@ export class HomePage {
       File.readAsText(path+'/', file_name).then(succ => alert('readAsText '+path+'/'+file_name+' '+JSON.stringify(succ))).catch(err => alert('readAsText '+path+'/'+file_name+' '+JSON.stringify(err)))
     }
 
+    fileParser(text){
+
+    }
+    // sendData(){
+    //   File.readAsText(path+'/', file_name).then(_ => HTTP.post(api_url, body, headers))
+    //   .catch(err => alert('Senddata file reading failed at : '+path+'/'+file_name+'. Error = '+JSON.stringify(err)))
+    //
+    // }
 }

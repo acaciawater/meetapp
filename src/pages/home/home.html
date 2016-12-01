@@ -7,7 +7,8 @@
 
 
   <ion-content padding>
-    <div class = 'main_title margin'>Acacia Water</div>
+    <!-- <img src="../../assets/pics/logo.jpg" alt="Logo" /> -->
+    <img src="/../assets/pics/logo.jpg" alt="Logo" />
       <div class="measurement margin'">
         <div class="value_container">
           <div id="ec_value" class='value'>0000</div>
@@ -22,4 +23,8 @@
       </div>
       <button id = 'startStop' class="big_button" (click)="startStop()">Start</button>
       <button id = 'send_record' class="big_button" disabled="true" (click)="getCurrentPosition()">Versturen</button>
+
+      <button class="big_button" (click)="alertFileContents()">checkfile</button>
+
+
   </ion-content>

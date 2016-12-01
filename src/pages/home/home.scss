@@ -1,3 +1,7 @@
+$acacia_dark: #0C226B;
+$acacia_light: #3688C2;
+
+
 ion-content {
 text-align: center;
 }
@@ -28,7 +32,7 @@ text-align: center;
   padding: 15px 32px;
   width: 50%;
   border: none;
-  background-color: blue;
+  background-color: $acacia_dark;
   cursor:pointer;
 }
 
