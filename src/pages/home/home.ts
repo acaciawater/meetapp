@@ -5,10 +5,13 @@ import { Geolocation } from 'ionic-native';
 import { Device } from 'ionic-native';
 import { HTTP } from 'ionic-native';
 
+
+
 declare var serial;
 declare var cordova: any;
 
 var api_url = 'http://meet.acaciadata.com:8000/api/v1/meting/'
+var headers = {}
 var first_measurement_done = false
 var tempor_values = '';
 var ec_value = '';
@@ -75,6 +78,15 @@ class Record {
     record['record_sent'] = this.record_sent;
     return JSON.stringify(record);
   }
+}
+
+function clone(obj) {
+    if (null == obj || "object" != typeof obj) return obj;
+    var copy = obj.constructor();
+    for (var attr in obj) {
+        if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
+    }
+    return copy;
 }
 
 function getCurrentDateTime(){
@@ -175,6 +187,8 @@ export class HomePage {
 
                 if (complete_input.indexOf('Water') >= 0){
                   ec_sensor_id = complete_input.replace(/\s/g,'')
+                  var encoded = btoa(ec_sensor_id+':'+ec_sensor_id)
+                  headers['Authorization'] = 'Basic '+encoded
                   displayValue('WATER', ec_sensor_id)
                 }
                 else if (complete_input.indexOf(',') >= 0){
@@ -227,27 +241,11 @@ export class HomePage {
         alert('Geen GPS signaal.\n'+ error);
       });
     }
-
-    writeFile(path, file_name, data){
-      alert('init writeFile');
-      data += '\n'
-      var body = data
-      var headers = '{}'
-      // File.writeFile(path, file_name, data, false).then(_ => alert('writeFile success path = '+path+' file_name = '+file_name+' data = '+data)).catch(err => alert('writeFile '+JSON.stringify(err)+ ' path = '+path+' file_name = '+file_name+' data = '+data));
-      File.writeFile(path, file_name, data, {append:true}).then(_ => alert('file written')).catch(err => alert('createFile '+JSON.stringify(err)));
-    }
+// HTTP.post(api_url, temperature_object, headers).then(_ => HTTP.post(api_url, ec_object, headers).then(_ => '2nd HTTP post succesfull!').catch(err => 'HTTP Post, headers = '+JSON.stringify(headers)+' Error = '+JSON.stringify(err)))
 
     newDirAndFile(base_path, dir_name, path, file_name, data){
       alert('init newDirAndFile');
       File.createDir(base_path, dir_name, false).then(_ => this.writeFile(path, file_name, data)).catch(err => alert('createDir '+base_path+dir_name+' '+JSON.stringify(err)));
-    }
-
-    saveMeasurement(){
-      alert('init saveMeasurement with EC set to = '+ec_value);
-      var datetime = getCurrentDateTime()
-      var record = new Record(ec_sensor_id, datetime, ec_value, temperature_value, lat, lon,horizontal_accuracy,altitude,vertical_accuracy, uuid, record_sent);
-      var data = record.getRecord();
-      File.checkDir(base_path, dir_name).then(_ => this.writeFile(path, file_name, data)).catch(err => this.newDirAndFile(base_path, dir_name, path, file_name, data));
     }
     checkDir(){
       File.checkDir(base_path, dir_name).then(_ => alert(base_path+dir_name+' is found')).catch(err => alert('checkDir '+JSON.stringify(err)));
@@ -258,13 +256,48 @@ export class HomePage {
     alertFileContents(){
       File.readAsText(path+'/', file_name).then(succ => alert('readAsText '+path+'/'+file_name+' '+succ)).catch(err => alert('readAsText '+path+'/'+file_name+' '+JSON.stringify(err)))
     }
-
-    fileParser(text){
-
+    saveMeasurement(){
+      alert('init saveMeasurement with EC set to = '+ec_value)
+      var datetime = getCurrentDateTime()
+      var record = new Record(ec_sensor_id, datetime, ec_value, temperature_value, lat, lon,horizontal_accuracy,altitude,vertical_accuracy, uuid, record_sent)
+      var data = record.getRecord()
+      File.checkDir(base_path, dir_name).then(_ => this.writeFile(path, file_name, data)).catch(err => this.newDirAndFile(base_path, dir_name, path, file_name, data))
     }
-    // sendData(){
-    //   File.readAsText(path+'/', file_name).then(_ => HTTP.post(api_url, body, headers))
-    //   .catch(err => alert('Senddata file reading failed at : '+path+'/'+file_name+'. Error = '+JSON.stringify(err)))
-    //
-    // }
+    writeFile(path, file_name, data){
+      alert('init writeFile')
+      data += '\n'
+      var body = data
+      var headers = '{}'
+      // File.writeFile(path, file_name, data, false).then(_ => alert('writeFile success path = '+path+' file_name = '+file_name+' data = '+data)).catch(err => alert('writeFile '+JSON.stringify(err)+ ' path = '+path+' file_name = '+file_name+' data = '+data));
+      File.writeFile(path, file_name, data, {append:true}).then(_ => this.sendData()).catch(err => alert('createFile '+JSON.stringify(err)))
+    }
+    sendData(){
+      File.readAsText(path+'/', file_name).then(text => this.fileParser(text)).catch(err => alert('Senddata: readAsText error ='+JSON.stringify(err)))
+      .catch(err => alert('Senddata file reading failed at : '+path+'/'+file_name+'. Error = '+JSON.stringify(err)))
+    }
+    fileParser(text){
+      var row = text.split('\n')
+      var array_of_objects = []
+      for (var line = row.length-2; line >= 0; line--){
+        var obj = JSON.parse(row[line])
+        array_of_objects.push(obj)
+        // als niet verzonden
+        if (!obj['record_sent']){
+          // split the object
+          var temperature_object = clone(obj)
+          delete temperature_object['ec']
+          var ec_object = clone(obj)
+          delete ec_object['tmp']
+          headers['Content-Type'] = 'application/json'
+          // temperature_object = JSON.stringify(temperature_object)
+          // ec_object = JSON.stringify(ec_object)
+          // HTTP.get('http://meet.acaciadata.com:8000/api/v1/meting/',null,null).then(resp => alert('success response = '+resp)).catch(err => alert('HTTP Get, Error = '+JSON.stringify(err)))
+          HTTP.post(api_url, temperature_object, headers).then(_ => HTTP.post(api_url, ec_object, headers).then(_ => '2nd HTTP post succesfull!').catch(err => 'HTTP Post, headers = '+JSON.stringify(headers)+' Error = '+JSON.stringify(err)))
+          .catch(err => alert('HTTP Post, headers = '+JSON.stringify(headers)+' Error = '+JSON.stringify(err)))
+
+          headers = JSON.stringify(headers)
+        }
+      }
+    }
+
 }
