@@ -10,8 +10,11 @@ var file_name = 'measurement_table.csv'
 var path = ''
 
 function displayHistory(history){
+  /**
+  * reads through saved records and adds max50 records to table
+  */
   var row = history.split('\n')
-  for (var line = row.length-2; line >= 0; line--){
+  for (var line = row.length-2; ((line >= 0)&&(line>row.length-50)); line--){
     var obj = JSON.parse(row[line])
     var table: HTMLTableElement = <HTMLTableElement> document.getElementById('history_table')
     var datetime = obj['date']
@@ -42,6 +45,9 @@ function displayHistory(history){
 
 export class AboutPage {
   constructor(public navCtrl: NavController) {
+    /**
+    * on device ready loads the table by calling displayHistory()
+    */
     document.addEventListener("deviceready", onDeviceReady, false)
     function onDeviceReady() {
     base_path = cordova.file.dataDirectory
@@ -50,6 +56,9 @@ export class AboutPage {
     }
   }
   visualiseHistory(){
+    /**
+    * attached to button in html to reload history
+    */
     File.readAsText(path+'/', file_name).then(history => displayHistory(history)).catch(err => alert('readAsText '+path+'/'+file_name+' '+JSON.stringify(err)))
   }
 }

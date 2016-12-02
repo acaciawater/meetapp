@@ -13,7 +13,8 @@ import { HTTP } from 'ionic-native';
 declare var serial;
 declare var cordova: any;
 
-var api_url = 'http://meet.acaciadata.com:8000/api/v1/meting/'
+var api_url_http = 'http://meet.acaciadata.com/api/v1/meting/'
+var api_url_https = 'https://meet.acaciadata.com/api/v1/meting/'
 
 //HTTP1
 var headers = {}
@@ -45,7 +46,9 @@ var path = '';
 // var path = base_path+dir_name;
 
 class Record {
-
+  /**
+  * creates a single record, which can be saved in a file
+  */
   sensor_id:string;
   datetime: string;
   ec: string;
@@ -89,6 +92,9 @@ class Record {
 }
 
 function clone(obj) {
+  /**
+  * helper function to clone a dictionary, returns the clone
+  */
     if (null == obj || "object" != typeof obj) return obj;
     var copy = obj.constructor();
     for (var attr in obj) {
@@ -98,6 +104,9 @@ function clone(obj) {
 }
 
 function getCurrentDateTime(){
+  /**
+  * helper function to get the current datetime, returns a string
+  */
   var unix_timestamp = + new Date()
   var a = new Date(unix_timestamp);
   var months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
@@ -118,6 +127,9 @@ function enableSendButton(){
 }
 
 function displayValue(ec_value, temperature_value){
+  /**
+  *  displays the ec and temperature values in the HTML
+  */
   var ec = document.getElementById('ec_value');
   ec.innerHTML = ec_value;
   var tmp = document.getElementById('temperature_value');
@@ -125,6 +137,12 @@ function displayValue(ec_value, temperature_value){
     }
 
 function toggleLogging() {
+  /**
+  *  toggles the logging process by setting global var is_logging to true or false
+  *  first asks the sensor for its ID (this is picked up by ReadCallback)
+  *  kickstarts the process by sending the first request for a measurement to the sensor (consecutive measurement commands are made in ReadCallback )
+  * this function is called upon within startStop()
+  */
   if (is_logging == false){
     is_logging = true;
     var ss = document.getElementById('startStop');
@@ -170,6 +188,11 @@ export class HomePage {
     }
 
   startStop() {
+    /**
+    *  linked to html button
+    *  starts the measuring process by
+    *  1 requesting permission 2 opening port 3 registering a read callback, 4 toggling toggleLogging()
+    */
     ec_value = '';
     if (is_logging == false){
     serial.requestPermission({vid: 9025, pid: 32845, driver: 'CdcAcmSerialDriver'},
@@ -184,8 +207,12 @@ export class HomePage {
           // register the read callback
            serial.registerReadCallback(
              function success(data){
-              // 1 er is data binnen gekomen
-              // 2 verwerk deze data
+               /**
+               * responds to responses from the sensor
+               *  converts this data to string and concatenates these strings until response has fully arrived
+               *  after first EC and temperature measurements have succesfully been assigned to their global vars it enables enableSendButton()
+               *  sends a request for a measurement to the sensor if global var is_logging is true (this triggers a loop in the ReadCallback)
+               */
               var view = new Uint8Array(data);
               var s = String.fromCharCode.apply(String,view);
               tempor_values += s;
@@ -196,7 +223,7 @@ export class HomePage {
                   ec_sensor_id = complete_input.replace(/\s/g,'')
                   // alert('ec id = '+ec_sensor_id)
                   var encoded = btoa(ec_sensor_id+':'+ec_sensor_id)
-                  headers['Authorization'] = 'Basic '+encoded
+                  // headers['Authorization'] = 'Basic '+encoded
                   // alert('headers = ' +JSON.stringify(headers))
                   displayValue('WATER', ec_sensor_id)
                 }
@@ -233,7 +260,12 @@ export class HomePage {
   }
 }
 
-    getCurrentPosition(){
+    startSavingSendingProcess(){
+      /**
+      * this function starts the saviong process by first asking for the location
+      * this function triggers a cascade effect of chained functions that return promises. the order of wich is:
+      * 1 getCurrentPosition, 2saveMeasurement() , 3writeFile(), 4readFileContents(), 5sendData(), 6HTTP.post()
+      */
       Geolocation.getCurrentPosition().then((resp) => {
         // alert(lat+lon)
         var latit = resp.coords.latitude
@@ -252,39 +284,61 @@ export class HomePage {
     }
 // HTTP.post(api_url, temperature_object, headers).then(_ => HTTP.post(api_url, ec_object, headers).then(_ => '2nd HTTP post succesfull!').catch(err => 'HTTP Post, headers = '+JSON.stringify(headers)+' Error = '+JSON.stringify(err)))
 
-    newDirAndFile(base_path, dir_name, path, file_name, data){
-      alert('init newDirAndFile');
-      File.createDir(base_path, dir_name, false).then(_ => this.writeFile(path, file_name, data)).catch(err => alert('createDir '+base_path+dir_name+' '+JSON.stringify(err)));
-    }
-    checkDir(){
-      File.checkDir(base_path, dir_name).then(_ => alert(base_path+dir_name+' is found')).catch(err => alert('checkDir '+JSON.stringify(err)));
-    }
-    checkFile(){
-      File.checkFile(path+'/', file_name).then(_ => alert('checkFile '+path+file_name+' found')).catch(err => alert('checkFile '+path+'/'+file_name+' error ='+JSON.stringify(err)));
-    }
-    alertFileContents(){
-      File.readAsText(path+'/', file_name).then(succ => alert('readAsText '+path+'/'+file_name+' '+succ)).catch(err => alert('readAsText '+path+'/'+file_name+' '+JSON.stringify(err)))
-    }
     saveMeasurement(){
+      /**
+      * checks to see if the app already created a directory to save file in and creates it if needed
+      * triggers writeFile
+      */
       alert('init saveMeasurement with EC set to = '+ec_value)
       var datetime = getCurrentDateTime()
       var record = new Record(ec_sensor_id, datetime, ec_value, temperature_value, lat, lon,horizontal_accuracy,altitude,vertical_accuracy, uuid, record_sent)
       var data = record.getRecord()
       File.checkDir(base_path, dir_name).then(_ => this.writeFile(path, file_name, data)).catch(err => this.newDirAndFile(base_path, dir_name, path, file_name, data))
     }
+    newDirAndFile(base_path, dir_name, path, file_name, data){
+      /**
+      * creates new directory and triggers writeFile()
+      */
+      alert('init newDirAndFile');
+      File.createDir(base_path, dir_name, false).then(_ => this.writeFile(path, file_name, data)).catch(err => alert('createDir '+base_path+dir_name+' '+JSON.stringify(err)));
+    }
     writeFile(path, file_name, data){
+      /**
+      * writes to file and triggers readFileContents()
+      */
       alert('init writeFile')
       data += '\n'
       var body = data
       var headers = '{}'
       // File.writeFile(path, file_name, data, false).then(_ => alert('writeFile success path = '+path+' file_name = '+file_name+' data = '+data)).catch(err => alert('writeFile '+JSON.stringify(err)+ ' path = '+path+' file_name = '+file_name+' data = '+data));
-      File.writeFile(path, file_name, data, {append:true}).then(_ => this.sendData()).catch(err => alert('createFile '+JSON.stringify(err)))
+      File.writeFile(path, file_name, data, {append:true}).then(_ => this.readFileContents()).catch(err => alert('createFile '+JSON.stringify(err)))
     }
-    sendData(){
-      File.readAsText(path+'/', file_name).then(text => this.fileParser(text)).catch(err => alert('Senddata: readAsText error ='+JSON.stringify(err)))
-      .catch(err => alert('Senddata file reading failed at : '+path+'/'+file_name+'. Error = '+JSON.stringify(err)))
+    readFileContents(){
+      /**
+      * writes to file and triggers sendData()
+      */
+      File.readAsText(path+'/', file_name).then(text => this.sendData(text)).catch(err => alert('readAsText: readAsText error ='+JSON.stringify(err)))
+      .catch(err => alert('readAsText file reading failed at : '+path+'/'+file_name+'. Error = '+JSON.stringify(err)))
     }
-    fileParser(text){
+    checkDir(){
+      /**debug*/
+      File.checkDir(base_path, dir_name).then(_ => alert(base_path+dir_name+' is found')).catch(err => alert('checkDir '+JSON.stringify(err)));
+    }
+    checkFile(){
+      /**debug*/
+      File.checkFile(path+'/', file_name).then(_ => alert('checkFile '+path+file_name+' found')).catch(err => alert('checkFile '+path+'/'+file_name+' error ='+JSON.stringify(err)));
+    }
+    alertFileContents(){
+      /**debug*/
+      File.readAsText(path+'/', file_name).then(succ => alert('readAsText '+path+'/'+file_name+' '+succ)).catch(err => alert('readAsText '+path+'/'+file_name+' '+JSON.stringify(err)))
+    }
+
+    sendData(text){
+      /**
+      * expects content of saved file as string
+      * parses the contents to objects
+      * TODO: send the data, empty the old file, always save not sent records, and save sent records if max of 50 has not been reached
+      */
       var row = text.split('\n')
       var array_of_objects = []
       for (var line = row.length-2; line >= 0; line--){
@@ -307,17 +361,63 @@ export class HomePage {
           // .catch(err => alert('HTTP Post, headers = '+JSON.stringify(headers)+' Error = '+JSON.stringify(err)))
           //HTTP1.1
           // , 'Content-Type': 'application/json'
-          var json_str = '{"date": "2016-12-01T10:30:00", "elevation": -2.2, "entity": "EC", "hacc": 3.0, "latitude": 52.62, "longitude": 4.54, "phone": "", "sensor": "WaterEC197", "unit": "µS/cm", "vacc": 12.0, "value": 197.0}'
-          alert('just about to send...')
-          HTTP.post(api_url, json_str, { Authorization: "Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3" , 'Content-Type': 'application/json'}).then(_ => alert('success!')).catch(err => 'HTTP Post error = '+JSON.stringify(err))
+          // var json_str = '{"date": "2016-12-01T10:30:00", "elevation": -2.2, "entity": "EC", "hacc": 3.0, "latitude": 52.62, "longitude": 4.54, "phone": "", "sensor": "WaterEC197", "unit": "µS/cm", "vacc": 12.0, "value": 197.0}'
+          // alert('just about to send...')
+          // HTTP.post(api_url, json_str, { Authorization: "Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3" , 'Content-Type': 'application/json'}).then(_ => alert('success!')).catch(err => 'HTTP Post error = '+JSON.stringify(err))
+          // alert('supposedly sent it ...')
           // HTTP.post(api_url, json_str, { Authorization: "Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3"}).then(_ => HTTP.post(api_url, ec_object, headers).then(_ => '2nd HTTP post succesfull!').catch(err => 'HTTP Post, headers = '+JSON.stringify(headers)+' Error = '+JSON.stringify(err)))
           // .catch(err => alert('HTTP Post, headers = '+JSON.stringify(headers)+' Error = '+JSON.stringify(err)))
           //HTTP2
           // var options = new RequestOptions({headers:headers})
           // var body = JSON.stringify(temperature_object)
           // Http.post(api_url,body, options).toProimise().then(response => alert(response.json())).catch(err => alert(err.json()))
+
+          var json_str = '{"date": "2016-12-01T10:30:00", "elevation": -2.2, "entity": "EC", "hacc": 3.0, "latitude": 52.62, "longitude": 4.54, "phone": "", "sensor": "WaterEC197", "unit": "µS/cm", "vacc": 12.0, "value": 197.0}'
+          var json_obj = {"date": "2016-12-01T10:30:00", "elevation": -2.2, "entity": "EC", "hacc": 3.0, "latitude": 52.62, "longitude": 4.54, "phone": "", "sensor": "WaterEC197", "unit": "µS/cm", "vacc": 12.0, "value": 197.0}
+          // POGING 1
+          // alert('just about to send...')
+          // HTTP.post(api_url, json_str, { Authorization: "Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3" , 'Content-Type': 'application/json'}).then(_ => alert('success!')).catch(err => 'HTTP Post error = '+JSON.stringify(err))
+          // alert('supposedly sent it ...')
+
+          // POGING 2
+          // alert('send url only...')
+          // HTTP.post(api_url, {}, {}).then(response => alert('url only success !'+ JSON.stringify(response))).catch(err => alert('url only (json={},not"" error'+JSON.stringify(err)))
+          // alert('send url+json_str only...')
+          // HTTP.post(api_url, json_str, {}).then(response => alert('url+json success !'+ JSON.stringify(response))).catch(err => alert('url+json error'+JSON.stringify(err)))
+          // alert('send url+ headers only ...')
+          // HTTP.post(api_url, '', {}).then(response => alert('url+headers success !'+ JSON.stringify(response))).catch(err => alert('url+headers error'+JSON.stringify(err)))
+          // alert('send the whole chabang...')
+          // HTTP.post(api_url, json_str, { Authorization: "Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3" , 'Content-Type': 'application/json'}).then(response => alert('chabang success !'+ JSON.stringify(response))).catch(err => alert('chabang error '+JSON.stringify(err)))
+
+          // POGING 2
+          // alert('send url only...')
+          // HTTP.post(api_url_http, json_obj, {Authorization: "Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3" , 'Content-Type': 'application/json'}).then(response => alert('http CT obj auth success!'+ JSON.stringify(response))).catch(err => alert('http CT auth error '+JSON.stringify(err)))
+          // HTTP.post(api_url_http, json_obj, {Authorization: "Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3" , 'content-type': 'application/json'}).then(response => alert('http ct obj auth success !'+ JSON.stringify(response))).catch(err => alert('http ct auth error'+JSON.stringify(err)))
+          // HTTP.post(api_url_http, json_obj, "{Authorization: Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3, Content-Type: application/json}").then(response => alert('http CT str auth success!'+ JSON.stringify(response))).catch(err => alert('http CT str auth error'+JSON.stringify(err)))
+          // HTTP.post(api_url_http, json_obj, "{Authorization: Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3, content-type: application/json}").then(response => alert('http ct str auth success !'+ JSON.stringify(response))).catch(err => alert('http ct str auth error'+JSON.stringify(err)))
+          // // alert('send url+json_str only...')
+          // alert('send url+ headers only ...')
+          // alert('send the whole chabang...')
+
+          // POGING 3
+          var header = HTTP.getBasicAuthHeader('WaterEC197','WaterEC197')
+          var json_obj = {"date": "2016-12-01T10:30:00", "elevation": -2.2, "entity": "EC", "hacc": 3.0, "latitude": 52.62, "longitude": 4.54, "phone": "",
+                            "sensor": "WaterEC197", "unit": "µS/cm", "vacc": 12.0, "value": 197.0}
+
+
+          // HTTP.post(api_url_http, json_obj, header).then(response => alert('http CT obj auth success!'+ JSON.stringify(response))).catch(err => alert('http CT auth error '+JSON.stringify(err)))
+          HTTP.post(api_url_http+'?format=json', json_obj, {Authorization: "Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3"}).then(response => alert('https success !'+ JSON.stringify(response))).catch(err => alert('https error'+JSON.stringify(err)))
+          // HTTP.post(api_url_http, json_obj, {Authorization: "Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3" , 'Content-Type': 'application/json'}).then(response => alert('http success !'+ JSON.stringify(response))).catch(err => alert('http error'+JSON.stringify(err)))
         }
       }
+    }
+
+
+
+
+    getRequest(){
+      /**debug*/
+      HTTP.get('http://meet.acaciadata.com/api/v1/meting/',{},{}).then(resp => alert('success response = '+resp.data)).catch(err => alert('HTTP Get, Error = '+JSON.stringify(err)))
     }
 
 }
