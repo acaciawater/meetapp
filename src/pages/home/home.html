@@ -1,30 +1,20 @@
-<ion-header>
-  <!-- <ion-navbar>
-    <ion-title>Home</ion-title>
-  </ion-navbar> -->
-
-</ion-header>
-
-
   <ion-content padding>
     <!-- <img src="../../assets/pics/logo.jpg" alt="Logo" /> -->
+  <div class="outer_div">
+    <div class="logo_container">
     <img src="/../assets/pics/logo.jpg" alt="Logo" />
-      <div class="measurement margin'">
-        <div class="value_container">
+    </div>
+        <div class="measurement_ec">
           <div id="ec_value" class='value'>0000</div>
         </div>
-        <div class="unit  margin">ms/cm2</div>
-      </div>
-      <div class="measurement margin">
-        <div class="value_container">
+      <div class="unit_ec">μS/cm</div>
+      <div class="measurement_tmp">
           <div id="temperature_value" class='value'>26.3</div>
-        </div>
-        <div class='unit margin'>Celsius</div>
       </div>
+      <div class='unit_tmp'>°Celsius</div>
       <button id = 'startStop' class="big_button" (click)="startStop()">Start</button>
       <button id = 'send_record' class="big_button" disabled="true" (click)="getCurrentPosition()">Versturen</button>
+  </div>
 
-      <button class="big_button" (click)="alertFileContents()">checkfile</button>
-
-
+  <!-- <button class="big_button" (click)="alertFileContents()">checkfile</button> -->
   </ion-content>

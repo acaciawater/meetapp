@@ -1,3 +1,6 @@
+$acacia_dark: #0C226B;
+$acacia_light: #3688C2;
+
 page-about {
   text-align: center;
 }
@@ -12,7 +15,7 @@ ion-content{
   padding: 15px 32px;
   width: 50%;
   border: none;
-  background-color: blue;
+  background-color: $acacia_dark;
   cursor:pointer;
 }
 
@@ -39,6 +42,6 @@ th, td{
 tr:nth-child(even){background-color: #f2f2f2}
 
 th{
-  background-color: #4CAF50;
+  background-color: $acacia_dark;
   color: white;
 }

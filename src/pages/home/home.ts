@@ -3,15 +3,23 @@ import { NavController } from 'ionic-angular';
 import { File } from 'ionic-native';
 import { Geolocation } from 'ionic-native';
 import { Device } from 'ionic-native';
-import { HTTP } from 'ionic-native';
 
+//HTTP1
+import { HTTP } from 'ionic-native';
+//HTTP2
+// import { Http, Headers, RequestOptions } from '@angular/http';
 
 
 declare var serial;
 declare var cordova: any;
 
 var api_url = 'http://meet.acaciadata.com:8000/api/v1/meting/'
+
+//HTTP1
 var headers = {}
+//HTTP2
+// var headers = new Headers()
+
 var first_measurement_done = false
 var tempor_values = '';
 var ec_value = '';
@@ -106,7 +114,7 @@ function getCurrentDateTime(){
 function enableSendButton(){
   var send_record_button = <HTMLInputElement> document.getElementById('send_record')
   send_record_button.disabled = false;
-  send_record_button.style.background = 'green';
+  send_record_button.style.background = '#3688C2';
 }
 
 function displayValue(ec_value, temperature_value){
@@ -184,11 +192,12 @@ export class HomePage {
               if (s.endsWith('\n')){
                 var complete_input = tempor_values
                 tempor_values = ''
-
                 if (complete_input.indexOf('Water') >= 0){
                   ec_sensor_id = complete_input.replace(/\s/g,'')
+                  // alert('ec id = '+ec_sensor_id)
                   var encoded = btoa(ec_sensor_id+':'+ec_sensor_id)
                   headers['Authorization'] = 'Basic '+encoded
+                  // alert('headers = ' +JSON.stringify(headers))
                   displayValue('WATER', ec_sensor_id)
                 }
                 else if (complete_input.indexOf(',') >= 0){
@@ -291,11 +300,22 @@ export class HomePage {
           headers['Content-Type'] = 'application/json'
           // temperature_object = JSON.stringify(temperature_object)
           // ec_object = JSON.stringify(ec_object)
-          // HTTP.get('http://meet.acaciadata.com:8000/api/v1/meting/',null,null).then(resp => alert('success response = '+resp)).catch(err => alert('HTTP Get, Error = '+JSON.stringify(err)))
-          HTTP.post(api_url, temperature_object, headers).then(_ => HTTP.post(api_url, ec_object, headers).then(_ => '2nd HTTP post succesfull!').catch(err => 'HTTP Post, headers = '+JSON.stringify(headers)+' Error = '+JSON.stringify(err)))
-          .catch(err => alert('HTTP Post, headers = '+JSON.stringify(headers)+' Error = '+JSON.stringify(err)))
 
-          headers = JSON.stringify(headers)
+          //HTTP1
+          // HTTP.get('http://meet.acaciadata.com:8000/api/v1/meting/',{},{}).then(resp => alert('success response = '+resp.data)).catch(err => alert('HTTP Get, Error = '+JSON.stringify(err)))
+          // HTTP.post(api_url, temperature_object, headers).then(_ => HTTP.post(api_url, ec_object, headers).then(_ => '2nd HTTP post succesfull!').catch(err => 'HTTP Post, headers = '+JSON.stringify(headers)+' Error = '+JSON.stringify(err)))
+          // .catch(err => alert('HTTP Post, headers = '+JSON.stringify(headers)+' Error = '+JSON.stringify(err)))
+          //HTTP1.1
+          // , 'Content-Type': 'application/json'
+          var json_str = '{"date": "2016-12-01T10:30:00", "elevation": -2.2, "entity": "EC", "hacc": 3.0, "latitude": 52.62, "longitude": 4.54, "phone": "", "sensor": "WaterEC197", "unit": "µS/cm", "vacc": 12.0, "value": 197.0}'
+          alert('just about to send...')
+          HTTP.post(api_url, json_str, { Authorization: "Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3" , 'Content-Type': 'application/json'}).then(_ => alert('success!')).catch(err => 'HTTP Post error = '+JSON.stringify(err))
+          // HTTP.post(api_url, json_str, { Authorization: "Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3"}).then(_ => HTTP.post(api_url, ec_object, headers).then(_ => '2nd HTTP post succesfull!').catch(err => 'HTTP Post, headers = '+JSON.stringify(headers)+' Error = '+JSON.stringify(err)))
+          // .catch(err => alert('HTTP Post, headers = '+JSON.stringify(headers)+' Error = '+JSON.stringify(err)))
+          //HTTP2
+          // var options = new RequestOptions({headers:headers})
+          // var body = JSON.stringify(temperature_object)
+          // Http.post(api_url,body, options).toProimise().then(response => alert(response.json())).catch(err => alert(err.json()))
         }
       }
     }
