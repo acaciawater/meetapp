@@ -5,19 +5,19 @@ import { Geolocation } from 'ionic-native';
 import { Device } from 'ionic-native';
 
 //HTTP1
-import { HTTP } from 'ionic-native';
+// import { HTTP } from 'ionic-native';
 //HTTP2
 // import { Http, Headers, RequestOptions } from '@angular/http';
-
+import { Http, Headers } from '@angular/http';
 
 declare var serial;
 declare var cordova: any;
 
-var api_url_http = 'http://meet.acaciadata.com/api/v1/meting/'
+// var api_url_http = 'http://meet.acaciadata.com/api/v1/meting/'
 var api_url_https = 'https://meet.acaciadata.com/api/v1/meting/'
 
 //HTTP1
-var headers = {}
+// var headers = {}
 //HTTP2
 // var headers = new Headers()
 
@@ -38,6 +38,7 @@ var dir_name = '';
 var file_name = '';
 var is_logging = false;
 var path = '';
+var encoded = ''
 // var datetime = ''
 
 // var base_path:string = cordova.file.dataDirectory;
@@ -173,7 +174,7 @@ export class HomePage {
   public value = 'A';
 
   constructor(
-    public navCtrl: NavController,) {
+    public navCtrl: NavController, private http:Http) {
       document.addEventListener("deviceready", onDeviceReady, false);
       function onDeviceReady() {
         alert("Device Ready");
@@ -222,7 +223,7 @@ export class HomePage {
                 if (complete_input.indexOf('Water') >= 0){
                   ec_sensor_id = complete_input.replace(/\s/g,'')
                   // alert('ec id = '+ec_sensor_id)
-                  var encoded = btoa(ec_sensor_id+':'+ec_sensor_id)
+                  encoded = btoa(ec_sensor_id+':'+ec_sensor_id)
                   // headers['Authorization'] = 'Basic '+encoded
                   // alert('headers = ' +JSON.stringify(headers))
                   displayValue('WATER', ec_sensor_id)
@@ -317,7 +318,7 @@ export class HomePage {
       /**
       * writes to file and triggers sendData()
       */
-      File.readAsText(path+'/', file_name).then(text => this.sendData(text)).catch(err => alert('readAsText: readAsText error ='+JSON.stringify(err)))
+      File.readAsText(path+'/', file_name).then(text => this.sendData(text)).catch(err => alert('readFilecontents: path = '+path+'/'+file_name+'readAsText error ='+JSON.stringify(err)))
       .catch(err => alert('readAsText file reading failed at : '+path+'/'+file_name+'. Error = '+JSON.stringify(err)))
     }
     checkDir(){
@@ -337,87 +338,81 @@ export class HomePage {
       /**
       * expects content of saved file as string
       * parses the contents to objects
-      * TODO: send the data, empty the old file, always save not sent records, and save sent records if max of 50 has not been reached
+      * TODO:
+      1 read old file,
+      2 save data in array,
+      3 send the data,
+      4 adjust array to which files are sent and which are not (always save not sent records, and save sent records if max of 50 has not been reached),
+      5 empty the old file, DANGER ZONE
+      5.1 write the new one
+      5 write new file(with other name)
+      5.2 remove new file (no danger zone, but smarted reading of data needed, because names change)
+      duplicates arrive: with both methods, if app turns off while sending, and it has been sent, but not saved in the file. then next time same stuff will be sent and duplicates arrive
       */
+
+      var headers = new Headers();
+      var auth = 'Basic '+encoded
+      headers.append('Authorization' , auth);
+      headers.append('Content-Type', 'application/json');
+      var json_str = '{"date": "2016-12-01T10:30:00", "elevation": -2.2, "entity": "EC", "hacc": 3.0, "laitude": 52.62, "longitude": 4.54, "phone": "", "sensor": "WaterEC197", "unit": "µS/cm", "vacc": 12.0, "value": 197.0}'
+      // var body = json_str
+
       var row = text.split('\n')
       var array_of_objects = []
+
+
       for (var line = row.length-2; line >= 0; line--){
         var obj = JSON.parse(row[line])
         array_of_objects.push(obj)
-        // als niet verzonden
+
+        // if record is not sent
         if (!obj['record_sent']){
           // split the object
+          alert('obj = '+JSON.stringify(obj))
           var temperature_object = clone(obj)
           delete temperature_object['ec']
+          temperature_object['entity'] = 'temperature'
+          temperature_object['unit'] = '°C'
+          temperature_object['value'] = temperature_object['tmp']
+          delete temperature_object['tmp']
+
           var ec_object = clone(obj)
           delete ec_object['tmp']
-          headers['Content-Type'] = 'application/json'
-          // temperature_object = JSON.stringify(temperature_object)
-          // ec_object = JSON.stringify(ec_object)
+          ec_object['entity'] = 'EC'
+          ec_object['unit'] = 'µS/cm'
+          ec_object['value'] = ec_object['ec']
+          delete ec_object['tmp']
 
-          //HTTP1
-          // HTTP.get('http://meet.acaciadata.com:8000/api/v1/meting/',{},{}).then(resp => alert('success response = '+resp.data)).catch(err => alert('HTTP Get, Error = '+JSON.stringify(err)))
-          // HTTP.post(api_url, temperature_object, headers).then(_ => HTTP.post(api_url, ec_object, headers).then(_ => '2nd HTTP post succesfull!').catch(err => 'HTTP Post, headers = '+JSON.stringify(headers)+' Error = '+JSON.stringify(err)))
-          // .catch(err => alert('HTTP Post, headers = '+JSON.stringify(headers)+' Error = '+JSON.stringify(err)))
-          //HTTP1.1
-          // , 'Content-Type': 'application/json'
-          // var json_str = '{"date": "2016-12-01T10:30:00", "elevation": -2.2, "entity": "EC", "hacc": 3.0, "latitude": 52.62, "longitude": 4.54, "phone": "", "sensor": "WaterEC197", "unit": "µS/cm", "vacc": 12.0, "value": 197.0}'
-          // alert('just about to send...')
-          // HTTP.post(api_url, json_str, { Authorization: "Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3" , 'Content-Type': 'application/json'}).then(_ => alert('success!')).catch(err => 'HTTP Post error = '+JSON.stringify(err))
-          // alert('supposedly sent it ...')
-          // HTTP.post(api_url, json_str, { Authorization: "Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3"}).then(_ => HTTP.post(api_url, ec_object, headers).then(_ => '2nd HTTP post succesfull!').catch(err => 'HTTP Post, headers = '+JSON.stringify(headers)+' Error = '+JSON.stringify(err)))
-          // .catch(err => alert('HTTP Post, headers = '+JSON.stringify(headers)+' Error = '+JSON.stringify(err)))
-          //HTTP2
-          // var options = new RequestOptions({headers:headers})
-          // var body = JSON.stringify(temperature_object)
-          // Http.post(api_url,body, options).toProimise().then(response => alert(response.json())).catch(err => alert(err.json()))
-
-          var json_str = '{"date": "2016-12-01T10:30:00", "elevation": -2.2, "entity": "EC", "hacc": 3.0, "latitude": 52.62, "longitude": 4.54, "phone": "", "sensor": "WaterEC197", "unit": "µS/cm", "vacc": 12.0, "value": 197.0}'
-          var json_obj = {"date": "2016-12-01T10:30:00", "elevation": -2.2, "entity": "EC", "hacc": 3.0, "latitude": 52.62, "longitude": 4.54, "phone": "", "sensor": "WaterEC197", "unit": "µS/cm", "vacc": 12.0, "value": 197.0}
-          // POGING 1
-          // alert('just about to send...')
-          // HTTP.post(api_url, json_str, { Authorization: "Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3" , 'Content-Type': 'application/json'}).then(_ => alert('success!')).catch(err => 'HTTP Post error = '+JSON.stringify(err))
-          // alert('supposedly sent it ...')
-
-          // POGING 2
-          // alert('send url only...')
-          // HTTP.post(api_url, {}, {}).then(response => alert('url only success !'+ JSON.stringify(response))).catch(err => alert('url only (json={},not"" error'+JSON.stringify(err)))
-          // alert('send url+json_str only...')
-          // HTTP.post(api_url, json_str, {}).then(response => alert('url+json success !'+ JSON.stringify(response))).catch(err => alert('url+json error'+JSON.stringify(err)))
-          // alert('send url+ headers only ...')
-          // HTTP.post(api_url, '', {}).then(response => alert('url+headers success !'+ JSON.stringify(response))).catch(err => alert('url+headers error'+JSON.stringify(err)))
-          // alert('send the whole chabang...')
-          // HTTP.post(api_url, json_str, { Authorization: "Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3" , 'Content-Type': 'application/json'}).then(response => alert('chabang success !'+ JSON.stringify(response))).catch(err => alert('chabang error '+JSON.stringify(err)))
-
-          // POGING 2
-          // alert('send url only...')
-          // HTTP.post(api_url_http, json_obj, {Authorization: "Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3" , 'Content-Type': 'application/json'}).then(response => alert('http CT obj auth success!'+ JSON.stringify(response))).catch(err => alert('http CT auth error '+JSON.stringify(err)))
-          // HTTP.post(api_url_http, json_obj, {Authorization: "Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3" , 'content-type': 'application/json'}).then(response => alert('http ct obj auth success !'+ JSON.stringify(response))).catch(err => alert('http ct auth error'+JSON.stringify(err)))
-          // HTTP.post(api_url_http, json_obj, "{Authorization: Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3, Content-Type: application/json}").then(response => alert('http CT str auth success!'+ JSON.stringify(response))).catch(err => alert('http CT str auth error'+JSON.stringify(err)))
-          // HTTP.post(api_url_http, json_obj, "{Authorization: Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3, content-type: application/json}").then(response => alert('http ct str auth success !'+ JSON.stringify(response))).catch(err => alert('http ct str auth error'+JSON.stringify(err)))
-          // // alert('send url+json_str only...')
-          // alert('send url+ headers only ...')
-          // alert('send the whole chabang...')
-
-          // POGING 3
-          var header = HTTP.getBasicAuthHeader('WaterEC197','WaterEC197')
-          var json_obj = {"date": "2016-12-01T10:30:00", "elevation": -2.2, "entity": "EC", "hacc": 3.0, "latitude": 52.62, "longitude": 4.54, "phone": "",
-                            "sensor": "WaterEC197", "unit": "µS/cm", "vacc": 12.0, "value": 197.0}
-
-
-          // HTTP.post(api_url_http, json_obj, header).then(response => alert('http CT obj auth success!'+ JSON.stringify(response))).catch(err => alert('http CT auth error '+JSON.stringify(err)))
-          HTTP.post(api_url_http+'?format=json', json_obj, {Authorization: "Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3"}).then(response => alert('https success !'+ JSON.stringify(response))).catch(err => alert('https error'+JSON.stringify(err)))
-          // HTTP.post(api_url_http, json_obj, {Authorization: "Basic V2F0ZXJFQzE5NzpXYXRlckVDMTk3" , 'Content-Type': 'application/json'}).then(response => alert('http success !'+ JSON.stringify(response))).catch(err => alert('http error'+JSON.stringify(err)))
+          this.http.post(api_url_https, JSON.stringify(temperature_object), {headers: headers}).subscribe(response => this.saveRecordTemporarily(response, temperature_object))
+          this.http.post(api_url_https, JSON.stringify(ec_object), {headers: headers}).subscribe(response => this.saveRecordTemporarily(response, ec_object))
+          // this.http.post(api_url_https, JSON.stringify(ec_object), {headers: headers}).subscribe(response => alert('response = '+JSON.stringify(response)+', ec object = '+JSON.stringify(ec_object) ))
+          // this.http.post(api_url_https, JSON.stringify(temperature_object), {headers: headers}).subscribe(response => this.saveRecordTemporarily(response, temperature_object))
+          // this.http.post(api_url_https, JSON.stringify(ec_object), {headers: headers}).subscribe(response => this.saveRecordTemporarily(response, ec_object))
         }
       }
+
+
+
+
     }
 
+    saveRecordTemporarily(response,record){
+      alert('init saveRecordTemporarily')
+      var tmp_file_name = 'tmp_measurements.csv'
+      if (response['status']==201){
+        //
+      }
+      else {
+        alert('ELSE'+response['status'])
+      }
 
+      // this.writeFile(path, tmp_file_name, record)
+    }
 
 
     getRequest(){
       /**debug*/
-      HTTP.get('http://meet.acaciadata.com/api/v1/meting/',{},{}).then(resp => alert('success response = '+resp.data)).catch(err => alert('HTTP Get, Error = '+JSON.stringify(err)))
+      // HTTP.get('http://meet.acaciadata.com/api/v1/meting/',{},{}).then(resp => alert('success response = '+resp.data)).catch(err => alert('HTTP Get, Error = '+JSON.stringify(err)))
     }
 
 }
