@@ -52,8 +52,9 @@ class Record {
   */
   sensor_id:string;
   datetime: string;
-  ec: string;
-  tmp: string;
+  value: string;
+  entity: string;
+  unit: string;
   lat: string;
   lon: string;
   horizontal_accuracy:number;
@@ -61,12 +62,13 @@ class Record {
   vertical_accuracy:number;
   uuid: string;
   record_sent: boolean;
-  constructor(  sensor_id:string, datetime:string, ec_value:string,temperature_value:string, lat:string, lon:string,
+  constructor(  sensor_id:string, datetime:string, value:string, entity:string, unit:string, lat:string, lon:string,
                 horizontal_accuracy:number,altitude: number,vertical_accuracy:number, uuid:string, record_sent:boolean){
     this.sensor_id = sensor_id;
     this.datetime = datetime;
-    this.ec = ec_value;
-    this.tmp = temperature_value;
+    this.value = value;
+    this.entity = entity;
+    this.unit = unit;
     this.lat = lat;
     this.lon = lon;
     this.horizontal_accuracy = horizontal_accuracy;
@@ -79,8 +81,9 @@ class Record {
     var record = new Object();
     record['sensor'] = this.sensor_id;
     record['date'] = this.datetime;
-    record['ec'] = this.ec;
-    record['tmp'] = this.tmp;
+    record['value'] = this.value;
+    record['entity'] = this.entity;
+    record['unit'] = this.unit;
     record['latitude'] = this.lat;
     record['longitude'] = this.lon;
     record['hacc'] = this.horizontal_accuracy;
@@ -292,27 +295,36 @@ export class HomePage {
       */
       alert('init saveMeasurement with EC set to = '+ec_value)
       var datetime = getCurrentDateTime()
-      var record = new Record(ec_sensor_id, datetime, ec_value, temperature_value, lat, lon,horizontal_accuracy,altitude,vertical_accuracy, uuid, record_sent)
-      var data = record.getRecord()
-      File.checkDir(base_path, dir_name).then(_ => this.writeFile(path, file_name, data)).catch(err => this.newDirAndFile(base_path, dir_name, path, file_name, data))
+      var ec_entity = 'EC'
+      var ec_unit = 'µS/cm'
+      var tmp_entity = 'temperature'
+      var tmp_unit = '°C'
+      var ec_record = new Record(ec_sensor_id, datetime, ec_value, ec_entity, ec_unit, lat, lon,horizontal_accuracy,altitude,vertical_accuracy, uuid, record_sent)
+      var tmp_record = new Record(ec_sensor_id, datetime, temperature_value, tmp_entity, tmp_unit, lat, lon,horizontal_accuracy,altitude,vertical_accuracy, uuid, record_sent)
+      var ec_data = ec_record.getRecord()
+      var tmp_data = tmp_record.getRecord()
+      File.checkDir(base_path, dir_name).then(_ => this.writeFile(path, file_name, ec_data, tmp_data)).catch(err => this.newDirAndFile(base_path, dir_name, path, file_name, ec_data, tmp_data))
     }
-    newDirAndFile(base_path, dir_name, path, file_name, data){
+    newDirAndFile(base_path, dir_name, path, file_name, ec_data, tmp_data){
       /**
       * creates new directory and triggers writeFile()
       */
       alert('init newDirAndFile');
-      File.createDir(base_path, dir_name, false).then(_ => this.writeFile(path, file_name, data)).catch(err => alert('createDir '+base_path+dir_name+' '+JSON.stringify(err)));
+      File.createDir(base_path, dir_name, false).then(_ => this.writeFile(path, file_name, ec_data, tmp_data)).catch(err => alert('createDir '+base_path+dir_name+' '+JSON.stringify(err)));
     }
-    writeFile(path, file_name, data){
+    writeFile(path, file_name, ec_data, tmp_data){
       /**
       * writes to file and triggers readFileContents()
       */
       alert('init writeFile')
-      data += '\n'
-      var body = data
-      var headers = '{}'
+      ec_data += '\n'
+      tmp_data += '\n'
       // File.writeFile(path, file_name, data, false).then(_ => alert('writeFile success path = '+path+' file_name = '+file_name+' data = '+data)).catch(err => alert('writeFile '+JSON.stringify(err)+ ' path = '+path+' file_name = '+file_name+' data = '+data));
-      File.writeFile(path, file_name, data, {append:true}).then(_ => this.readFileContents()).catch(err => alert('createFile '+JSON.stringify(err)))
+      File.writeFile(path, file_name, ec_data, {append:true})
+        .then(_ => File.writeFile(path, file_name, tmp_data, {append:true})
+          .then(_ => this.readFileContents())
+          .catch(err => alert('createFile '+JSON.stringify(err))))
+        .catch(err => alert('createFile '+JSON.stringify(err)))
     }
     readFileContents(){
       /**

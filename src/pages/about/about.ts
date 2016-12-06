@@ -11,29 +11,38 @@ var path = ''
 
 function displayHistory(history){
   /**
-  * reads through saved records and adds max50 records to table
+  * reads through saved records and adds max 100 records to table
   */
+  var table: HTMLTableElement = <HTMLTableElement> document.getElementById('history_table')
+  table.innerHTML = ''
+
+  var tr = table.insertRow(0)
+  var th_date = tr.insertCell(0)
+  var th_ec = tr.insertCell(1)
+  var th_sent = tr.insertCell(2)
+  th_date.innerHTML = 'Datum'
+  th_ec.innerHTML = 'EC'
+  th_sent.innerHTML = 'Verstuurd'
+
   var row = history.split('\n')
-  for (var line = row.length-2; ((line >= 0)&&(line>row.length-50)); line--){
+  for (var line = row.length-2; ((line >= 0)&&(line>row.length-100)); line--){
     var obj = JSON.parse(row[line])
-    var table: HTMLTableElement = <HTMLTableElement> document.getElementById('history_table')
-    var datetime = obj['date']
-    var ec = obj['ec']
-    var tmp = obj['tmp']
-    var sent = obj['record_sent']
-    var tr = table.insertRow(1)
-    var td_date = tr.insertCell(0)
-    var td_tmp = tr.insertCell(1)
-    var td_ec = tr.insertCell(2)
-    var td_sent = tr.insertCell(3)
-    td_date.innerHTML = datetime
-    td_tmp.innerHTML = tmp
-    td_ec.innerHTML = ec
-    if (sent){
-      td_sent.innerHTML = 'Ja'
-    }
-    else {
-      td_sent.innerHTML = 'Nee'
+    if (obj['entity']=='EC'){
+      var datetime = obj['date']
+      var ec = obj['value']
+      var sent = obj['record_sent']
+      var tr = table.insertRow(1)
+      var td_date = tr.insertCell(0)
+      var td_ec = tr.insertCell(1)
+      var td_sent = tr.insertCell(2)
+      td_date.innerHTML = datetime
+      td_ec.innerHTML = ec
+      if (sent){
+        td_sent.innerHTML = 'Ja'
+      }
+      else {
+        td_sent.innerHTML = 'Nee'
+      }
     }
   }
 }
