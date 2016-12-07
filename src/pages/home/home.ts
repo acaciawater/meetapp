@@ -3,23 +3,12 @@ import { NavController } from 'ionic-angular';
 import { File } from 'ionic-native';
 import { Geolocation } from 'ionic-native';
 import { Device } from 'ionic-native';
-
-//HTTP1
-// import { HTTP } from 'ionic-native';
-//HTTP2
-// import { Http, Headers, RequestOptions } from '@angular/http';
 import { Http, Headers } from '@angular/http';
 
 declare var serial;
 declare var cordova: any;
 
-// var api_url_http = 'http://meet.acaciadata.com/api/v1/meting/'
 var api_url_https = 'https://meet.acaciadata.com/api/v1/meting/'
-
-//HTTP1
-// var headers = {}
-//HTTP2
-// var headers = new Headers()
 
 var first_measurement_done = false
 var tempor_values = ''
@@ -41,18 +30,6 @@ var path = ''
 var encoded = ''
 var tmp_array_of_records = []
 var clone_array_for_api = []
-// var amount_of_records = 0
-// var records_already_sent = 0
-// var records_succesfully_sent = 0
-// var records_failed_to_send = 0
-
-
-// var datetime = ''
-
-// var base_path:string = cordova.file.dataDirectory;
-// var dir_name = 'AcaciaData';
-// var file_name = 'measurement_table.csv';
-// var path = base_path+dir_name;
 
 class Record {
   /**
@@ -287,14 +264,12 @@ export class HomePage {
         horizontal_accuracy = resp.coords.accuracy
         altitude = resp.coords.altitude
         vertical_accuracy = resp.coords.altitudeAccuracy
-        // displayValue(horizontal_accuracy,altitude+vertical_accuracy)
         this.saveMeasurement()
 
       }).catch((error) => {
         alert('Geen GPS signaal.\n'+ error);
       });
     }
-// HTTP.post(api_url, temperature_object, headers).then(_ => HTTP.post(api_url, ec_object, headers).then(_ => '2nd HTTP post succesfull!').catch(err => 'HTTP Post, headers = '+JSON.stringify(headers)+' Error = '+JSON.stringify(err)))
 
     saveMeasurement(){
       /**
@@ -357,23 +332,9 @@ export class HomePage {
     sendData(text){
       /**
       * expects content of saved file as string
-      * parses the contents to objects
-      * TODO:
-      1 read old file,
-      2 save data in array,
-      3 send the data,
-      4 adjust array to which files are sent and which are not (always save not sent records, and save sent records if max of 50 has not been reached),
-      5 empty the old file, DANGER ZONE
-      5.1 write the new one
-      5 write new file(with other name)
-      5.2 remove new file (no danger zone, but smarted reading of data needed, because names change)
-      duplicates arrive: with both methods, if app turns off while sending, and it has been sent, but not saved in the file. then next time same stuff will be sent and duplicates arrive
+      * makes two arrays of dictionaries by cloning, one to send, other to save
+      *
       */
-      // amount_of_records = 0
-      // records_already_sent = 0
-      // records_succesfully_sent = 0
-      // records_failed_to_send = 0
-
       tmp_array_of_records = []
       clone_array_for_api = []
       var headers = new Headers();
@@ -381,9 +342,7 @@ export class HomePage {
       headers.append('Authorization' , auth);
       headers.append('Content-Type', 'application/json');
       var json_str = '{"date": "2016-12-01T10:30:00", "elevation": -2.2, "entity": "EC", "hacc": 3.0, "laitude": 52.62, "longitude": 4.54, "phone": "", "sensor": "WaterEC197", "unit": "µS/cm", "vacc": 12.0, "value": 197.0}'
-      // var body = json_str
       var row = text.split('\n')
-      // var body = []
       for (var line = row.length-2; line >= 0; line--){
         var obj = JSON.parse(row[line])
         var cl = clone(obj)
@@ -392,15 +351,18 @@ export class HomePage {
         clone_array_for_api.push(cl)
       }
 
-
-
-      // amount_of_records = array_of_objects.length
       var body = JSON.stringify({objects:clone_array_for_api})
-      // this.http.post(api_url_https, JSON.stringify(obj), {headers: headers}).subscribe(api_response => this.checkResponse(api_response))
       this.http.patch(api_url_https, body, {headers: headers}).subscribe(api_response => this.saveArrayOfRecords(api_response))
 
     }
     saveArrayOfRecords(api_response){
+      /**
+      expects the api_response
+      reads tmp_array_of_records
+      if 202 is returned, the record_sent value is changed
+      saves the records in a temporary file
+      replaces original db file with it
+      */
       var tmp_file_name = 'temp_db.csv'
       var response = JSON.parse(JSON.stringify(api_response))
       if (response['status']==202){
@@ -420,38 +382,4 @@ export class HomePage {
           .catch(err => alert('tmp file saving error: '+err))
       }
     }
-
-
-    getRequest(){
-      /**debug*/
-      // HTTP.get('http://meet.acaciadata.com/api/v1/meting/',{},{}).then(resp => alert('success response = '+resp.data)).catch(err => alert('HTTP Get, Error = '+JSON.stringify(err)))
-    }
-
 }
-
-
-
-// for (var i=0; i<=array_of_objects.length-1; i++){
-//   array_of_objects[i]
-//   // if record is not sent
-//   if (!array_of_objects[i]['record_sent']){
-//     // split the object
-//     alert('obj = '+JSON.stringify(array_of_objects[i]))
-//
-//     // this.http.post(api_url_https, JSON.stringify(obj), {headers: headers}).subscribe(api_response => this.saveRecordTemporarily(api_response, obj))
-//     // this.http.post(api_url_https, JSON.stringify(obj), {headers: headers}).subscribe(api_response => alert('init saveRecordTemporarily with '+JSON.stringify(obj)))
-//     // this.http.post(api_url_https, JSON.stringify(obj), {headers: headers}).subscribe(api_response => alert('init saveRecordTemporarily with '+JSON.stringify(api_response)))
-//     // this.http.post(api_url_https, JSON.stringify(ec_object), {headers: headers}).subscribe(response => alert('response = '+JSON.stringify(response)+', ec object = '+JSON.stringify(ec_object) ))
-//     // this.http.post(api_url_https, JSON.stringify(temperature_object), {headers: headers}).subscribe(response => this.saveRecordTemporarily(response, temperature_object))
-//     // this.http.post(api_url_https, JSON.stringify(ec_object), {headers: headers}).subscribe(response => this.saveRecordTemporarily(response, ec_object))
-//     // this.http.post(api_url_https, JSON.stringify(array_of_objects[i]), {headers: headers}).subscribe(api_response => alert(api_response))
-//
-//   }
-//   else{
-//     records_already_sent+=1
-//   }
-// }
-//
-// while(0==0){
-//
-// }
