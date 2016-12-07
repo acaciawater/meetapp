@@ -22,23 +22,31 @@ var api_url_https = 'https://meet.acaciadata.com/api/v1/meting/'
 // var headers = new Headers()
 
 var first_measurement_done = false
-var tempor_values = '';
-var ec_value = '';
-var temperature_value = '';
-var lat = '';
-var lon = '';
-var horizontal_accuracy = null;
-var altitude = null;
-var vertical_accuracy = null;
-var uuid = '';
-var ec_sensor_id = '';
-var record_sent = false;
-var base_path:string = '';
-var dir_name = '';
-var file_name = '';
-var is_logging = false;
-var path = '';
+var tempor_values = ''
+var ec_value = ''
+var temperature_value = ''
+var lat = ''
+var lon = ''
+var horizontal_accuracy = null
+var altitude = null
+var vertical_accuracy = null
+var uuid = ''
+var ec_sensor_id = ''
+var record_sent = false
+var base_path:string = ''
+var dir_name = ''
+var db_file_name = ''
+var is_logging = false
+var path = ''
 var encoded = ''
+var tmp_array_of_records = []
+var clone_array_for_api = []
+// var amount_of_records = 0
+// var records_already_sent = 0
+// var records_succesfully_sent = 0
+// var records_failed_to_send = 0
+
+
 // var datetime = ''
 
 // var base_path:string = cordova.file.dataDirectory;
@@ -186,7 +194,7 @@ export class HomePage {
         record_sent = false;
         base_path = cordova.file.dataDirectory;
         dir_name = 'AcaciaData';
-        file_name = 'measurement_table.csv';
+        db_file_name = 'measurement_table.csv';
         path = base_path+dir_name;
       };
     }
@@ -303,7 +311,7 @@ export class HomePage {
       var tmp_record = new Record(ec_sensor_id, datetime, temperature_value, tmp_entity, tmp_unit, lat, lon,horizontal_accuracy,altitude,vertical_accuracy, uuid, record_sent)
       var ec_data = ec_record.getRecord()
       var tmp_data = tmp_record.getRecord()
-      File.checkDir(base_path, dir_name).then(_ => this.writeFile(path, file_name, ec_data, tmp_data)).catch(err => this.newDirAndFile(base_path, dir_name, path, file_name, ec_data, tmp_data))
+      File.checkDir(base_path, dir_name).then(_ => this.writeFile(path, db_file_name, ec_data, tmp_data)).catch(err => this.newDirAndFile(base_path, dir_name, path, db_file_name, ec_data, tmp_data))
     }
     newDirAndFile(base_path, dir_name, path, file_name, ec_data, tmp_data){
       /**
@@ -330,8 +338,8 @@ export class HomePage {
       /**
       * writes to file and triggers sendData()
       */
-      File.readAsText(path+'/', file_name).then(text => this.sendData(text)).catch(err => alert('readFilecontents: path = '+path+'/'+file_name+'readAsText error ='+JSON.stringify(err)))
-      .catch(err => alert('readAsText file reading failed at : '+path+'/'+file_name+'. Error = '+JSON.stringify(err)))
+      File.readAsText(path+'/', db_file_name).then(text => this.sendData(text)).catch(err => alert('readFilecontents: path = '+path+'/'+db_file_name+'readAsText error ='+JSON.stringify(err)))
+      .catch(err => alert('readAsText file reading failed at : '+path+'/'+db_file_name+'. Error = '+JSON.stringify(err)))
     }
     checkDir(){
       /**debug*/
@@ -339,11 +347,11 @@ export class HomePage {
     }
     checkFile(){
       /**debug*/
-      File.checkFile(path+'/', file_name).then(_ => alert('checkFile '+path+file_name+' found')).catch(err => alert('checkFile '+path+'/'+file_name+' error ='+JSON.stringify(err)));
+      File.checkFile(path+'/', db_file_name).then(_ => alert('checkFile '+path+db_file_name+' found')).catch(err => alert('checkFile '+path+'/'+db_file_name+' error ='+JSON.stringify(err)));
     }
     alertFileContents(){
       /**debug*/
-      File.readAsText(path+'/', file_name).then(succ => alert('readAsText '+path+'/'+file_name+' '+succ)).catch(err => alert('readAsText '+path+'/'+file_name+' '+JSON.stringify(err)))
+      File.readAsText(path+'/', db_file_name).then(succ => alert('readAsText '+path+'/'+db_file_name+' '+succ)).catch(err => alert('readAsText '+path+'/'+db_file_name+' '+JSON.stringify(err)))
     }
 
     sendData(text){
@@ -361,64 +369,56 @@ export class HomePage {
       5.2 remove new file (no danger zone, but smarted reading of data needed, because names change)
       duplicates arrive: with both methods, if app turns off while sending, and it has been sent, but not saved in the file. then next time same stuff will be sent and duplicates arrive
       */
+      // amount_of_records = 0
+      // records_already_sent = 0
+      // records_succesfully_sent = 0
+      // records_failed_to_send = 0
 
+      tmp_array_of_records = []
+      clone_array_for_api = []
       var headers = new Headers();
       var auth = 'Basic '+encoded
       headers.append('Authorization' , auth);
       headers.append('Content-Type', 'application/json');
       var json_str = '{"date": "2016-12-01T10:30:00", "elevation": -2.2, "entity": "EC", "hacc": 3.0, "laitude": 52.62, "longitude": 4.54, "phone": "", "sensor": "WaterEC197", "unit": "µS/cm", "vacc": 12.0, "value": 197.0}'
       // var body = json_str
-
       var row = text.split('\n')
-      var array_of_objects = []
-
-
+      // var body = []
       for (var line = row.length-2; line >= 0; line--){
         var obj = JSON.parse(row[line])
-        array_of_objects.push(obj)
-
-        // if record is not sent
-        if (!obj['record_sent']){
-          // split the object
-          alert('obj = '+JSON.stringify(obj))
-          var temperature_object = clone(obj)
-          delete temperature_object['ec']
-          temperature_object['entity'] = 'temperature'
-          temperature_object['unit'] = '°C'
-          temperature_object['value'] = temperature_object['tmp']
-          delete temperature_object['tmp']
-
-          var ec_object = clone(obj)
-          delete ec_object['tmp']
-          ec_object['entity'] = 'EC'
-          ec_object['unit'] = 'µS/cm'
-          ec_object['value'] = ec_object['ec']
-          delete ec_object['tmp']
-
-          this.http.post(api_url_https, JSON.stringify(temperature_object), {headers: headers}).subscribe(response => this.saveRecordTemporarily(response, temperature_object))
-          this.http.post(api_url_https, JSON.stringify(ec_object), {headers: headers}).subscribe(response => this.saveRecordTemporarily(response, ec_object))
-          // this.http.post(api_url_https, JSON.stringify(ec_object), {headers: headers}).subscribe(response => alert('response = '+JSON.stringify(response)+', ec object = '+JSON.stringify(ec_object) ))
-          // this.http.post(api_url_https, JSON.stringify(temperature_object), {headers: headers}).subscribe(response => this.saveRecordTemporarily(response, temperature_object))
-          // this.http.post(api_url_https, JSON.stringify(ec_object), {headers: headers}).subscribe(response => this.saveRecordTemporarily(response, ec_object))
-        }
+        var cl = clone(obj)
+        tmp_array_of_records.push(obj)
+        delete cl['record_sent']
+        clone_array_for_api.push(cl)
       }
 
 
 
+      // amount_of_records = array_of_objects.length
+      var body = JSON.stringify({objects:clone_array_for_api})
+      // this.http.post(api_url_https, JSON.stringify(obj), {headers: headers}).subscribe(api_response => this.checkResponse(api_response))
+      this.http.patch(api_url_https, body, {headers: headers}).subscribe(api_response => this.saveArrayOfRecords(api_response))
 
     }
-
-    saveRecordTemporarily(response,record){
-      alert('init saveRecordTemporarily')
-      var tmp_file_name = 'tmp_measurements.csv'
-      if (response['status']==201){
-        //
+    saveArrayOfRecords(api_response){
+      var tmp_file_name = 'temp_db.csv'
+      var response = JSON.parse(JSON.stringify(api_response))
+      if (response['status']==202){
+        var body = ''
+        for (var i=0; i<=tmp_array_of_records.length-1; i++){
+          var x = tmp_array_of_records[i]
+          x['record_sent']=true
+          var line = JSON.stringify(tmp_array_of_records[i])+'\n'
+          body+=line
+        }
+        File.writeFile(path, tmp_file_name, body, {append:false})
+          .then(_ => File.removeFile(path, db_file_name)
+            .then(_ => File.moveFile(path, tmp_file_name, path, db_file_name)
+              .then(path => alert('file succesfully moved to '+path))
+              .catch(err => alert('tmp to db file replacement error: '+err)))
+            .catch(err => alert('db file removal error: '+err)))
+          .catch(err => alert('tmp file saving error: '+err))
       }
-      else {
-        alert('ELSE'+response['status'])
-      }
-
-      // this.writeFile(path, tmp_file_name, record)
     }
 
 
@@ -428,3 +428,30 @@ export class HomePage {
     }
 
 }
+
+
+
+// for (var i=0; i<=array_of_objects.length-1; i++){
+//   array_of_objects[i]
+//   // if record is not sent
+//   if (!array_of_objects[i]['record_sent']){
+//     // split the object
+//     alert('obj = '+JSON.stringify(array_of_objects[i]))
+//
+//     // this.http.post(api_url_https, JSON.stringify(obj), {headers: headers}).subscribe(api_response => this.saveRecordTemporarily(api_response, obj))
+//     // this.http.post(api_url_https, JSON.stringify(obj), {headers: headers}).subscribe(api_response => alert('init saveRecordTemporarily with '+JSON.stringify(obj)))
+//     // this.http.post(api_url_https, JSON.stringify(obj), {headers: headers}).subscribe(api_response => alert('init saveRecordTemporarily with '+JSON.stringify(api_response)))
+//     // this.http.post(api_url_https, JSON.stringify(ec_object), {headers: headers}).subscribe(response => alert('response = '+JSON.stringify(response)+', ec object = '+JSON.stringify(ec_object) ))
+//     // this.http.post(api_url_https, JSON.stringify(temperature_object), {headers: headers}).subscribe(response => this.saveRecordTemporarily(response, temperature_object))
+//     // this.http.post(api_url_https, JSON.stringify(ec_object), {headers: headers}).subscribe(response => this.saveRecordTemporarily(response, ec_object))
+//     // this.http.post(api_url_https, JSON.stringify(array_of_objects[i]), {headers: headers}).subscribe(api_response => alert(api_response))
+//
+//   }
+//   else{
+//     records_already_sent+=1
+//   }
+// }
+//
+// while(0==0){
+//
+// }
