@@ -422,9 +422,6 @@ export class HomePage {
       this.http.patch(api_url_https, body, {headers: headers}).subscribe(api_response => this.saveArrayOfRecords(api_response))
     }
 
-    removeDbFile(){
-      File.removeFile(path, db_file_name).then(str => alert(JSON.stringify(str)))
-    }
     saveArrayOfRecords(api_response){
       /**
       expects the api_response
@@ -443,22 +440,20 @@ export class HomePage {
           var line = JSON.stringify(tmp_array_of_records[i])+'\n'
           body+=line
         }
-        // original
-        // File.writeFile(path, tmp_file_name, body, {append:false})
-        //   .then(_ => File.removeFile(path, db_file_name)
-        //     .then(_ => File.moveFile(path, tmp_file_name, path, db_file_name)
-        //       .then(path => alert('file succesfully moved to '+path))
-        //       .catch(err => alert('tmp to db file replacement error: '+err)))
-        //     .catch(err => alert('db file removal error: '+err)))
-        //   .catch(err => alert('tmp file saving error: '+err))
-        //  TEST double file
+
         File.writeFile(path, tmp_file_name, body, {append:false})
-          .then(_ => File.removeFile(path, 'abi, kapot!')
+          .then(_ => File.removeFile(path, db_file_name)
             .then(_ => File.moveFile(path, tmp_file_name, path, db_file_name)
               .then(path => alert('file succesfully moved to '+path))
               .catch(err => alert('tmp to db file replacement error: '+err)))
             .catch(err => alert('db file removal error: '+err)))
           .catch(err => alert('tmp file saving error: '+err))
+
       }
     }
+    // removeDbFile(){
+    //   // TESTING
+    //   File.removeFile(path, db_file_name).then(str => alert(JSON.stringify(str)))
+    // }
+
 }
