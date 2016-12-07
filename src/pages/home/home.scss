@@ -68,17 +68,11 @@ margin-bottom: 15px;
   width: 154px;
   height: 55px;
   border: none;
-  background-color: $acacia_dark;
+  background-color: grey;
   cursor:pointer;
 }
 
-#send_record{
-background-color: grey;
-}
 
-#toggleStop{
-  display: none;
-}
 
 @media (max-height: 500px ){
 

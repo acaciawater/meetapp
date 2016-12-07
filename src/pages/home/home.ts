@@ -9,7 +9,7 @@ declare var serial;
 declare var cordova: any;
 
 var api_url_https = 'https://meet.acaciadata.com/api/v1/meting/'
-
+var tmp_file_name = ''
 var first_measurement_done = false
 var tempor_values = ''
 var ec_value = ''
@@ -109,8 +109,70 @@ function getCurrentDateTime(){
   return time;
 }
 
+function checkDatabaseFiles(){
+  File.listDir(base_path, dir_name)
+  .then(entries => reformatFiles(entries))
+  // TESTED OK
+  .catch(_ => enableStartStopButton())
+}
+
+function reformatFiles(entries){
+  alert('paths: '+JSON.stringify(entries))
+  var db_file = false
+  var tmp_db_file = false
+  for (var i=0;i<=entries.length-1;i++){
+    alert('index ='+ i)
+    if (entries[i].fullPath=='/AcaciaData/measurement_table.csv'){
+      alert('db found')
+      db_file = true
+    }
+    if (entries[i].fullPath=='/AcaciaData/temp_db.csv'){
+      alert('tmp_db found')
+      tmp_db_file = true
+    }
+  }
+  if (db_file&&!tmp_db_file){
+    // if only db file
+    enableStartStopButton()
+  }
+  if (!db_file&&!tmp_db_file){
+    //  if neither
+    enableStartStopButton()
+  }
+  if (!db_file&&tmp_db_file){
+    // if only tmp file rename it
+          File.moveFile(path, tmp_file_name, path, db_file_name)
+          .then(_ => enableStartStopButton())
+          .catch(err => alert('tmp to db file replacement error: '+JSON.stringify(err)))
+  }
+  if(db_file&&tmp_db_file){
+    // if both exist
+      // if tmp is corrupt walkthrough db and set all values to sent
+      // if tmp is not corrupt remove db and rename tmp
+    File.readAsText(path, tmp_file_name)
+      .then(_ =>
+        File.removeFile(path, db_file_name)
+          .then(_ =>
+            File.moveFile(path, tmp_file_name, path, db_file_name)
+              .then(_ => enableStartStopButton())
+              .catch(err => alert('error moving tmp to db file, error = '+JSON.stringify(err))))
+          .catch(err => alert('error removing file, '+JSON.stringify(err))))
+      // file is corrupt
+      .catch(_ =>
+        File.removeFile(path, tmp_file_name)
+          .then(succ => enableStartStopButton())
+          .catch(err => alert('failed removing file'+JSON.stringify(err))))
+  }
+}
+
 function enableSendButton(){
   var send_record_button = <HTMLInputElement> document.getElementById('send_record')
+  send_record_button.disabled = false;
+  send_record_button.style.background = '#3688C2';
+}
+
+function enableStartStopButton(){
+  var send_record_button = <HTMLInputElement> document.getElementById('startStop')
   send_record_button.disabled = false;
   send_record_button.style.background = '#3688C2';
 }
@@ -165,16 +227,19 @@ export class HomePage {
     public navCtrl: NavController, private http:Http) {
       document.addEventListener("deviceready", onDeviceReady, false);
       function onDeviceReady() {
-        alert("Device Ready");
+        // alert("Device Ready");
         uuid = Device.device.uuid;
         // latlon = '(x;y)';
         record_sent = false;
         base_path = cordova.file.dataDirectory;
         dir_name = 'AcaciaData';
         db_file_name = 'measurement_table.csv';
+        tmp_file_name = 'temp_db.csv'
         path = base_path+dir_name;
+        checkDatabaseFiles()
       };
     }
+
 
   startStop() {
     /**
@@ -355,7 +420,10 @@ export class HomePage {
 
       var body = JSON.stringify({objects:clone_array_for_api})
       this.http.patch(api_url_https, body, {headers: headers}).subscribe(api_response => this.saveArrayOfRecords(api_response))
+    }
 
+    removeDbFile(){
+      File.removeFile(path, db_file_name).then(str => alert(JSON.stringify(str)))
     }
     saveArrayOfRecords(api_response){
       /**
@@ -365,7 +433,7 @@ export class HomePage {
       saves the records in a temporary file
       replaces original db file with it
       */
-      var tmp_file_name = 'temp_db.csv'
+
       var response = JSON.parse(JSON.stringify(api_response))
       if (response['status']==202){
         var body = ''
@@ -375,8 +443,17 @@ export class HomePage {
           var line = JSON.stringify(tmp_array_of_records[i])+'\n'
           body+=line
         }
+        // original
+        // File.writeFile(path, tmp_file_name, body, {append:false})
+        //   .then(_ => File.removeFile(path, db_file_name)
+        //     .then(_ => File.moveFile(path, tmp_file_name, path, db_file_name)
+        //       .then(path => alert('file succesfully moved to '+path))
+        //       .catch(err => alert('tmp to db file replacement error: '+err)))
+        //     .catch(err => alert('db file removal error: '+err)))
+        //   .catch(err => alert('tmp file saving error: '+err))
+        //  TEST double file
         File.writeFile(path, tmp_file_name, body, {append:false})
-          .then(_ => File.removeFile(path, db_file_name)
+          .then(_ => File.removeFile(path, 'abi, kapot!')
             .then(_ => File.moveFile(path, tmp_file_name, path, db_file_name)
               .then(path => alert('file succesfully moved to '+path))
               .catch(err => alert('tmp to db file replacement error: '+err)))
