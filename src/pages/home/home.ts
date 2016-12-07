@@ -98,14 +98,14 @@ function getCurrentDateTime(){
   */
   var unix_timestamp = + new Date()
   var a = new Date(unix_timestamp);
-  var months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+  // var months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
   var year = a.getFullYear();
   var month = a.getMonth()+1;
-  var date = a.getDate();
+  var day = a.getDate();
   var hour = a.getHours();
   var min = a.getMinutes();
   var sec = a.getSeconds();
-  var time = date + '-' + month + '-' + year + ' ' + hour + ':' + min + ':' + sec ;
+  var time = month + '-' + day + '-' + year + ' ' + hour + ':' + min + ':' + sec ;
   return time;
 }
 
@@ -214,14 +214,16 @@ export class HomePage {
                   encoded = btoa(ec_sensor_id+':'+ec_sensor_id)
                   // headers['Authorization'] = 'Basic '+encoded
                   // alert('headers = ' +JSON.stringify(headers))
-                  displayValue('WATER', ec_sensor_id)
+                  // displayValue('WATER', ec_sensor_id)
                 }
                 else if (complete_input.indexOf(',') >= 0){
                   var split_values = complete_input.split(',')
                   temperature_value = split_values[0]
                   ec_value = split_values[1].replace('\r\n','')
                   displayValue(ec_value,temperature_value)
-                  enableSendButton()
+                  if (ec_value!=='-1.0'){
+                    enableSendButton()
+                  }
                 }
                 if (is_logging){
                   serial.write("R\r\n")
