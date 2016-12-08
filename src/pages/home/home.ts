@@ -110,6 +110,10 @@ function getCurrentDateTime(){
 }
 
 function checkDatabaseFiles(){
+  /**
+  this function is called upon device ready
+  looks in directory for files, then calls reformatFiles() with its result wich are the files found in the dir
+  */
   File.listDir(base_path, dir_name)
   .then(entries => reformatFiles(entries))
   // TESTED OK
@@ -117,17 +121,25 @@ function checkDatabaseFiles(){
 }
 
 function reformatFiles(entries){
-  alert('paths: '+JSON.stringify(entries))
+  /**
+  expects files found in the application directory
+  if none are found, its ok (first time app has been installed)
+  if only db file is foudn, its ok
+  if only tmp file is found, the db file got removed, but the tmp file not renamed, fixes this
+  if both are found and tmp is corrupt, remove tmp
+  if both are found and tmp is not corrupt, remove db and rename tmp
+  */
+  // alert('paths: '+JSON.stringify(entries))
   var db_file = false
   var tmp_db_file = false
   for (var i=0;i<=entries.length-1;i++){
-    alert('index ='+ i)
+    // alert('index ='+ i)
     if (entries[i].fullPath=='/AcaciaData/measurement_table.csv'){
-      alert('db found')
+      // alert('db found')
       db_file = true
     }
     if (entries[i].fullPath=='/AcaciaData/temp_db.csv'){
-      alert('tmp_db found')
+      // alert('tmp_db found')
       tmp_db_file = true
     }
   }
@@ -147,7 +159,7 @@ function reformatFiles(entries){
   }
   if(db_file&&tmp_db_file){
     // if both exist
-      // if tmp is corrupt walkthrough db and set all values to sent
+      // if tmp is corrupt remoe tmp
       // if tmp is not corrupt remove db and rename tmp
     File.readAsText(path, tmp_file_name)
       .then(_ =>
@@ -198,7 +210,7 @@ function toggleLogging() {
     is_logging = true;
     var ss = document.getElementById('startStop');
     ss.innerHTML = 'Stop';
-    alert('logging on');
+    // alert('logging on');
     if (ec_sensor_id == ''){
       serial.write("DEVICE\r\n");
     }
@@ -208,7 +220,7 @@ function toggleLogging() {
     is_logging = false;
     var ss = document.getElementById('startStop');
     ss.innerHTML = 'Start';
-    alert('logging off');
+    // alert('logging off');
   }
 }
 
@@ -257,7 +269,7 @@ export class HomePage {
       serial.open(opts,
         // if port is succsefully opened
         function success(){
-          alert("Port Succesfully Opened");
+          // alert("Port Succesfully Opened");
           // register the read callback
            serial.registerReadCallback(
              function success(data){
@@ -297,17 +309,17 @@ export class HomePage {
             },
           // error attaching the callback
             function error(evt){
-              alert(evt);
+              alert(JSON.stringify(evt));
             }
            );
            toggleLogging();
         }, function error(evt){
-          alert(evt);
+          alert(JSON.stringify(evt));
         }
       );
     },
     function error(evt){
-      alert(evt);
+      alert(JSON.stringify(evt));
     },
     );
   }
@@ -343,7 +355,7 @@ export class HomePage {
       * checks to see if the app already created a directory to save file in and creates it if needed
       * triggers writeFile
       */
-      alert('init saveMeasurement with EC set to = '+ec_value)
+      // alert('init saveMeasurement with EC set to = '+ec_value)
       var datetime = getCurrentDateTime()
       var ec_entity = 'EC'
       var ec_unit = 'µS/cm'
@@ -359,14 +371,14 @@ export class HomePage {
       /**
       * creates new directory and triggers writeFile()
       */
-      alert('init newDirAndFile');
+      // alert('init newDirAndFile');
       File.createDir(base_path, dir_name, false).then(_ => this.writeFile(path, file_name, ec_data, tmp_data)).catch(err => alert('createDir '+base_path+dir_name+' '+JSON.stringify(err)));
     }
     writeFile(path, file_name, ec_data, tmp_data){
       /**
       * writes to file and triggers readFileContents()
       */
-      alert('init writeFile')
+      // alert('init writeFile')
       ec_data += '\n'
       tmp_data += '\n'
       // File.writeFile(path, file_name, data, false).then(_ => alert('writeFile success path = '+path+' file_name = '+file_name+' data = '+data)).catch(err => alert('writeFile '+JSON.stringify(err)+ ' path = '+path+' file_name = '+file_name+' data = '+data));
@@ -382,18 +394,6 @@ export class HomePage {
       */
       File.readAsText(path+'/', db_file_name).then(text => this.sendData(text)).catch(err => alert('readFilecontents: path = '+path+'/'+db_file_name+'readAsText error ='+JSON.stringify(err)))
       .catch(err => alert('readAsText file reading failed at : '+path+'/'+db_file_name+'. Error = '+JSON.stringify(err)))
-    }
-    checkDir(){
-      /**debug*/
-      File.checkDir(base_path, dir_name).then(_ => alert(base_path+dir_name+' is found')).catch(err => alert('checkDir '+JSON.stringify(err)));
-    }
-    checkFile(){
-      /**debug*/
-      File.checkFile(path+'/', db_file_name).then(_ => alert('checkFile '+path+db_file_name+' found')).catch(err => alert('checkFile '+path+'/'+db_file_name+' error ='+JSON.stringify(err)));
-    }
-    alertFileContents(){
-      /**debug*/
-      File.readAsText(path+'/', db_file_name).then(succ => alert('readAsText '+path+'/'+db_file_name+' '+succ)).catch(err => alert('readAsText '+path+'/'+db_file_name+' '+JSON.stringify(err)))
     }
 
     sendData(text){
@@ -444,7 +444,7 @@ export class HomePage {
         File.writeFile(path, tmp_file_name, body, {append:false})
           .then(_ => File.removeFile(path, db_file_name)
             .then(_ => File.moveFile(path, tmp_file_name, path, db_file_name)
-              .then(path => alert('file succesfully moved to '+path))
+              .then(path => 'do nothing')
               .catch(err => alert('tmp to db file replacement error: '+err)))
             .catch(err => alert('db file removal error: '+err)))
           .catch(err => alert('tmp file saving error: '+err))
@@ -454,6 +454,18 @@ export class HomePage {
     // removeDbFile(){
     //   // TESTING
     //   File.removeFile(path, db_file_name).then(str => alert(JSON.stringify(str)))
+    // }
+    // checkDir(){
+    //   /**debug*/
+    //   File.checkDir(base_path, dir_name).then(_ => alert(base_path+dir_name+' is found')).catch(err => alert('checkDir '+JSON.stringify(err)));
+    // }
+    // checkFile(){
+    //   /**debug*/
+    //   File.checkFile(path+'/', db_file_name).then(_ => alert('checkFile '+path+db_file_name+' found')).catch(err => alert('checkFile '+path+'/'+db_file_name+' error ='+JSON.stringify(err)));
+    // }
+    // alertFileContents(){
+    //   /**debug*/
+    //   File.readAsText(path+'/', db_file_name).then(succ => alert('readAsText '+path+'/'+db_file_name+' '+succ)).catch(err => alert('readAsText '+path+'/'+db_file_name+' '+JSON.stringify(err)))
     // }
 
 }

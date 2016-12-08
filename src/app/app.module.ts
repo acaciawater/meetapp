@@ -4,7 +4,7 @@ import { MyApp } from './app.component';
 import { AboutPage } from '../pages/about/about';
 import { HomePage } from '../pages/home/home';
 import { TabsPage } from '../pages/tabs/tabs';
-import { SettingsPage } from '../pages/settings/settings';
+
 
 @NgModule({
   declarations: [
@@ -12,7 +12,6 @@ import { SettingsPage } from '../pages/settings/settings';
     AboutPage,
     HomePage,
     TabsPage,
-    SettingsPage
   ],
   imports: [
     IonicModule.forRoot(MyApp)
@@ -23,7 +22,6 @@ import { SettingsPage } from '../pages/settings/settings';
     AboutPage,
     HomePage,
     TabsPage,
-    SettingsPage
   ],
   providers: []
 })

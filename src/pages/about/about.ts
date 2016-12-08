@@ -61,13 +61,13 @@ export class AboutPage {
     function onDeviceReady() {
     base_path = cordova.file.dataDirectory
     path = base_path+dir_name
-    File.readAsText(path+'/', file_name).then(history => displayHistory(history)).catch(err => alert('readAsText '+path+'/'+file_name+' '+JSON.stringify(err)))
+    File.readAsText(path+'/', file_name).then(history => displayHistory(history)).catch(_ => 'do nothing')
     }
   }
   visualiseHistory(){
     /**
     * attached to button in html to reload history
     */
-    File.readAsText(path+'/', file_name).then(history => displayHistory(history)).catch(err => alert('readAsText '+path+'/'+file_name+' '+JSON.stringify(err)))
+    File.readAsText(path+'/', file_name).then(history => displayHistory(history)).catch(_ => 'do nothing')
   }
 }
