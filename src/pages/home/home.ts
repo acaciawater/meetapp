@@ -4,6 +4,7 @@ import { File } from 'ionic-native';
 import { Geolocation } from 'ionic-native';
 import { Device } from 'ionic-native';
 import { Http, Headers } from '@angular/http';
+import { Diagnostic } from 'ionic-native';
 
 declare var serial;
 declare var cordova: any;
@@ -30,6 +31,7 @@ var path = ''
 var encoded = ''
 var tmp_array_of_records = []
 var clone_array_for_api = []
+var has_gps = false
 
 class Record {
   /**
@@ -262,6 +264,12 @@ export class HomePage {
         tmp_file_name = 'temp_db.csv'
         path = base_path+dir_name;
         checkDatabaseFiles()
+        Diagnostic.isLocationAvailable().then((resp) => {
+          if (!resp){
+            alert('Zet a.u.b. GPS aan')
+          }
+        }
+        ).catch(err => alert('isLOC error'+JSON.stringify(err)))
       };
     }
 
@@ -350,14 +358,24 @@ export class HomePage {
 
     startSavingSendingProcess(){
       /**
-      * this function starts the saviong process by first asking for the location
+      * this function starts the saviong process by first checking if gps is turned on, then asking for the location
       * this function triggers a cascade effect of chained functions that return promises. the order of wich is:
       * 1 getCurrentPosition, 2saveMeasurement() , 3writeFile(), 4readFileContents(), 5sendData(), 6HTTP.post()
       */
-      Geolocation.getCurrentPosition().then((resp) => {
-          disableSendButton()
-          this.saveMeasurement(resp)
-      }).catch(error => alert('GPS signaal error.\n'+ error))
+
+      Diagnostic.isLocationAvailable().then((resp) => {
+        if (!resp){
+          alert('Zet a.u.b. GPS aan')
+        }
+        if (resp){
+          Geolocation.getCurrentPosition().then((resp) => {
+            disableSendButton()
+            this.saveMeasurement(resp)
+          }).catch(error => alert('GPS signaal error.\n'+ error))
+        }
+      }
+      ).catch(err => alert('isLOC error'+JSON.stringify(err)))
+
     }
 
     saveMeasurement(location){
