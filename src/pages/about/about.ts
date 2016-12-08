@@ -59,11 +59,25 @@ export class AboutPage {
     */
     document.addEventListener("deviceready", onDeviceReady, false)
     function onDeviceReady() {
-    base_path = cordova.file.dataDirectory
-    path = base_path+dir_name
-    File.readAsText(path+'/', file_name).then(history => displayHistory(history)).catch(_ => 'do nothing')
+      base_path = cordova.file.dataDirectory
+      path = base_path+dir_name
+      File.readAsText(path+'/', file_name).then(history => displayHistory(history)).catch(_ => 'do nothing')
     }
+    // window.addEventListener('load',onPageShow)
+    // function onPageShow() {
+    //   alert('abii')
+    // }
+
+    // document.getElementById("history_table").addEventListener("load", onPageShow)
+    // // window.addEventListener("pageshow", onPageShow, false)
+    //
+      // this.visualiseHistory()
+
   }
+
+
+
+
   visualiseHistory(){
     /**
     * attached to button in html to reload history
