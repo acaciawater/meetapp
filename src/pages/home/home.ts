@@ -14,11 +14,11 @@ var first_measurement_done = false
 var tempor_values = ''
 var ec_value = ''
 var temperature_value = ''
-var lat = ''
-var lon = ''
-var horizontal_accuracy = null
-var altitude = null
-var vertical_accuracy = null
+// var lat = ''
+// var lon = ''
+// var horizontal_accuracy = null
+// var altitude = null
+// var vertical_accuracy = null
 var uuid = ''
 var ec_sensor_id = ''
 var record_sent = false
@@ -78,6 +78,11 @@ class Record {
     record['record_sent'] = this.record_sent;
     return JSON.stringify(record);
   }
+}
+
+function saveMeasurement(){
+  alert('blaaalala')
+  this.saveMeasurement()
 }
 
 function clone(obj) {
@@ -350,29 +355,28 @@ export class HomePage {
       * 1 getCurrentPosition, 2saveMeasurement() , 3writeFile(), 4readFileContents(), 5sendData(), 6HTTP.post()
       */
       Geolocation.getCurrentPosition().then((resp) => {
-        // alert(lat+lon)
-        disableSendButton()
-        var latit = resp.coords.latitude
-        var longit = resp.coords.longitude
-        lat = latit.toString()
-        lon = longit.toString()
-        horizontal_accuracy = resp.coords.accuracy
-        altitude = resp.coords.altitude
-        vertical_accuracy = resp.coords.altitudeAccuracy
-        this.saveMeasurement()
-
-      }).catch((error) => {
-        alert('Geen GPS signaal.\n'+ error);
-      });
+          disableSendButton()
+          this.saveMeasurement(resp)
+      }).catch(error => alert('GPS signaal error.\n'+ error))
     }
 
-    saveMeasurement(){
+    saveMeasurement(location){
 
       /**
       * checks to see if the app already created a directory to save file in and creates it if needed
       * triggers writeFile
       */
+
       alert('init saveMeasurement with EC set to = '+ec_value)
+
+      var latit = location.coords.latitude
+      var longit = location.coords.longitude
+      var lat = latit.toString()
+      var lon = longit.toString()
+      var horizontal_accuracy = location.coords.accuracy
+      var altitude = location.coords.altitude
+      var vertical_accuracy = location.coords.altitudeAccuracy
+
       var datetime = getCurrentDateTime()
       var ec_entity = 'EC'
       var ec_unit = 'µS/cm'
