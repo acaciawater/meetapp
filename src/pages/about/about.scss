@@ -52,3 +52,9 @@ th{
   background-color: $acacia_dark;
   color: white;
 }
+
+@media (max-height: 500px ){
+  .button{
+    font-size: 14px
+  }
+}

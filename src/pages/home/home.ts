@@ -182,12 +182,20 @@ function enableSendButton(){
   send_record_button.disabled = false;
   send_record_button.style.background = '#3688C2';
 }
+function disableSendButton(){
+  var send_record_button = <HTMLInputElement> document.getElementById('send_record')
+  send_record_button.disabled = true;
+  send_record_button.style.background = '#808080';
+}
 
 function enableStartStopButton(){
   var send_record_button = <HTMLInputElement> document.getElementById('startStop')
   send_record_button.disabled = false;
   send_record_button.style.background = '#3688C2';
 }
+
+
+
 
 function displayValue(ec_value, temperature_value){
   /**
@@ -305,7 +313,7 @@ export class HomePage {
                     ec_value = ecv.toString()
                   }
                   displayValue(ec_value,temperature_value)
-                  if (ec_value!=='-1.0'){
+                  if (ec_value!=='-1'){
                     enableSendButton()
                   }
                 }
@@ -343,6 +351,7 @@ export class HomePage {
       */
       Geolocation.getCurrentPosition().then((resp) => {
         // alert(lat+lon)
+        disableSendButton()
         var latit = resp.coords.latitude
         var longit = resp.coords.longitude
         lat = latit.toString()
@@ -358,6 +367,7 @@ export class HomePage {
     }
 
     saveMeasurement(){
+
       /**
       * checks to see if the app already created a directory to save file in and creates it if needed
       * triggers writeFile
@@ -450,7 +460,7 @@ export class HomePage {
         File.writeFile(path, tmp_file_name, body, {append:false})
           .then(_ => File.removeFile(path, db_file_name)
             .then(_ => File.moveFile(path, tmp_file_name, path, db_file_name)
-              .then(path => alert('success!!'))
+              .then(path => enableSendButton())
               .catch(err => alert('tmp to db file replacement error: '+err)))
             .catch(err => alert('db file removal error: '+err)))
           .catch(err => alert('tmp file saving error: '+err))

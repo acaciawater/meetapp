@@ -83,8 +83,11 @@ margin-bottom: 15px;
 
 @media (max-height: 500px ){
 
+  .outer_div{
+    padding: 10px;
+  }
   .logo_container{
-    margin-bottom: 5px;
+    margin-bottom: 0px;
   }
 
   .measurement_ec{
