@@ -400,7 +400,6 @@ export class HomePage {
       /**
       * expects content of saved file as string
       * makes two arrays of dictionaries by cloning, one to send, other to save
-      *
       */
       tmp_array_of_records = []
       clone_array_for_api = []

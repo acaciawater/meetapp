@@ -15,8 +15,15 @@ ion-content{
   padding: 15px 32px;
   width: 50%;
   border: none;
-  background-color: $acacia_dark;
+  background-color: $acacia_light;
   cursor:pointer;
+  box-shadow: 0 9px #999;
+}
+
+.button:active {
+  background-color: $acacia_dark;
+  box-shadow: 0 5px #666;
+  transform: translateY(4px);
 }
 
 .table_container{

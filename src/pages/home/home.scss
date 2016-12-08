@@ -70,8 +70,15 @@ margin-bottom: 15px;
   border: none;
   background-color: grey;
   cursor:pointer;
+  box-shadow: 0 9px #999;
 }
 
+
+.big_button:active {
+  background-color: $acacia_dark;
+  box-shadow: 0 5px #666;
+  transform: translateY(4px);
+}
 
 
 @media (max-height: 500px ){
