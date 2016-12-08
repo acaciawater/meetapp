@@ -210,7 +210,7 @@ function toggleLogging() {
     is_logging = true;
     var ss = document.getElementById('startStop');
     ss.innerHTML = 'Stop';
-    // alert('logging on');
+    alert('logging on');
     if (ec_sensor_id == ''){
       serial.write("DEVICE\r\n");
     }
@@ -220,7 +220,7 @@ function toggleLogging() {
     is_logging = false;
     var ss = document.getElementById('startStop');
     ss.innerHTML = 'Start';
-    // alert('logging off');
+    alert('logging off');
   }
 }
 
@@ -269,7 +269,7 @@ export class HomePage {
       serial.open(opts,
         // if port is succsefully opened
         function success(){
-          // alert("Port Succesfully Opened");
+          alert("Port Succesfully Opened");
           // register the read callback
            serial.registerReadCallback(
              function success(data){
@@ -297,6 +297,13 @@ export class HomePage {
                   var split_values = complete_input.split(',')
                   temperature_value = split_values[0]
                   ec_value = split_values[1].replace('\r\n','')
+                  var ecv = parseFloat(split_values[1].replace('\r\n',''))
+                  if(ecv>=1000.0){
+                    ec_value = Math.round(ecv).toString()
+                  }
+                  else{
+                    ec_value = ecv.toString()
+                  }
                   displayValue(ec_value,temperature_value)
                   if (ec_value!=='-1.0'){
                     enableSendButton()
@@ -309,17 +316,17 @@ export class HomePage {
             },
           // error attaching the callback
             function error(evt){
-              alert(JSON.stringify(evt));
+              alert('A '+JSON.stringify(evt));
             }
            );
            toggleLogging();
         }, function error(evt){
-          alert(JSON.stringify(evt));
+          alert('B '+JSON.stringify(evt));
         }
       );
     },
     function error(evt){
-      alert(JSON.stringify(evt));
+      alert('C ' +JSON.stringify(evt));
     },
     );
   }
@@ -355,7 +362,7 @@ export class HomePage {
       * checks to see if the app already created a directory to save file in and creates it if needed
       * triggers writeFile
       */
-      // alert('init saveMeasurement with EC set to = '+ec_value)
+      alert('init saveMeasurement with EC set to = '+ec_value)
       var datetime = getCurrentDateTime()
       var ec_entity = 'EC'
       var ec_unit = 'µS/cm'
@@ -371,14 +378,14 @@ export class HomePage {
       /**
       * creates new directory and triggers writeFile()
       */
-      // alert('init newDirAndFile');
+      alert('init newDirAndFile');
       File.createDir(base_path, dir_name, false).then(_ => this.writeFile(path, file_name, ec_data, tmp_data)).catch(err => alert('createDir '+base_path+dir_name+' '+JSON.stringify(err)));
     }
     writeFile(path, file_name, ec_data, tmp_data){
       /**
       * writes to file and triggers readFileContents()
       */
-      // alert('init writeFile')
+      alert('init writeFile')
       ec_data += '\n'
       tmp_data += '\n'
       // File.writeFile(path, file_name, data, false).then(_ => alert('writeFile success path = '+path+' file_name = '+file_name+' data = '+data)).catch(err => alert('writeFile '+JSON.stringify(err)+ ' path = '+path+' file_name = '+file_name+' data = '+data));
@@ -443,7 +450,7 @@ export class HomePage {
         File.writeFile(path, tmp_file_name, body, {append:false})
           .then(_ => File.removeFile(path, db_file_name)
             .then(_ => File.moveFile(path, tmp_file_name, path, db_file_name)
-              .then(path => 'do nothing')
+              .then(path => alert('success!!'))
               .catch(err => alert('tmp to db file replacement error: '+err)))
             .catch(err => alert('db file removal error: '+err)))
           .catch(err => alert('tmp file saving error: '+err))

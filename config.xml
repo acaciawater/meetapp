@@ -29,6 +29,7 @@
   <preference name="SplashScreenBackgroundColor" value="0xFFFFFFFF"/>
   <preference name="AndroidPersistentFileLocation" value="Internal" />
   <preference name="iosPersistentFileLocation" value="Library" />
+  <preference name="orientation" value="portrait" />
   <feature name="StatusBar">
     <param name="ios-package" onload="true" value="CDVStatusBar"/>
   </feature>
