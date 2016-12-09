@@ -5,6 +5,9 @@ import { Geolocation } from 'ionic-native';
 import { Device } from 'ionic-native';
 import { Http, Headers } from '@angular/http';
 import { Diagnostic } from 'ionic-native';
+import {Observable} from 'rxjs/Observable';
+import 'rxjs/add/observable/fromEvent';
+import { Network } from 'ionic-native';
 
 declare var serial;
 declare var cordova: any;
@@ -29,8 +32,8 @@ var db_file_name = ''
 var is_logging = false
 var path = ''
 var encoded = ''
-var tmp_array_of_records = []
-var clone_array_for_api = []
+// var tmp_array_of_records = []
+// var clone_array_for_api = []
 var has_gps = false
 
 class Record {
@@ -222,9 +225,6 @@ function enableStartStopButton(){
   send_record_button.style.background = '#3688C2';
 }
 
-
-
-
 function displayValue(ec_value, temperature_value){
   /**
   *  displays the ec and temperature values in the HTML
@@ -260,22 +260,24 @@ function toggleLogging() {
   }
 }
 
-
 @Component({
   selector: 'page-home',
   templateUrl: 'home.html'
 })
 
-
 export class HomePage {
-
   public value = 'A';
-
   constructor(
     public navCtrl: NavController, private http:Http) {
+
       document.addEventListener("deviceready", onDeviceReady, false);
       function onDeviceReady() {
         // alert("Device Ready");
+        var online = Observable.fromEvent(document, 'online')
+        online.subscribe(()=>{
+          alert('connection!')
+          this.readFileContents()
+        })
         uuid = Device.device.uuid;
         // latlon = '(x;y)';
         record_sent = false;
@@ -462,8 +464,8 @@ export class HomePage {
       * makes two arrays of dictionaries by cloning, one to send, other to save
       */
       alert('init sendData')
-      tmp_array_of_records = []
-      clone_array_for_api = []
+      var tmp_array_of_records = []
+      var clone_array_for_api = []
       var headers = new Headers();
       var auth = 'Basic '+encoded
       headers.append('Authorization' , auth);
@@ -479,11 +481,18 @@ export class HomePage {
       }
 
       var body = JSON.stringify({objects:clone_array_for_api})
-      alert('end sendData')
-      this.http.patch(api_url_https, body, {headers: headers}).subscribe(api_response => this.saveArrayOfRecords(api_response))
+      alert('jsut before end sendData')
+
+      if (Network.connection!=='none'){
+        this.http.patch(api_url_https, body, {headers: headers}).subscribe(api_response => this.saveArrayOfRecords(api_response, tmp_array_of_records))
+      }
+      if (Network.connection =='none'){
+        // if no internet
+        this.saveArrayOfRecords({'status': 'nointernet'}, tmp_array_of_records)
+      }
     }
 
-    saveArrayOfRecords(api_response){
+    saveArrayOfRecords(api_response, array_of_records){
       /**
       expects the api_response
       reads tmp_array_of_records
@@ -499,33 +508,26 @@ export class HomePage {
       try {
       table = <HTMLTableElement> document.getElementById('history_table')
       alert(table.id)
-      table.innerHTML = ''
-      var tr = table.insertRow(0)
-      var th_date = tr.insertCell(0)
-      var th_ec = tr.insertCell(1)
-      var th_sent = tr.insertCell(2)
-      th_date.innerHTML = 'Datum'
-      th_ec.innerHTML = 'EC'
-      th_sent.innerHTML = 'Verstuurd'
+      table.innerHTML = '<tr><th>Datum</th><th>EC</th><th>Verstuurd</th></tr>'
       alert('JE HEBT EM!'+table.outerHTML)
       }
       catch(err){
         alert('err = '+err.message)
       }
 
-
       var response = JSON.parse(JSON.stringify(api_response))
-      if (response['status']==202){
         var body = ''
-        for (var i=0; i<=tmp_array_of_records.length-1; i++){
-          var x = tmp_array_of_records[i]
-          x['record_sent']=true
+        for (var i=0; i<=array_of_records.length-1; i++){
+          var x = array_of_records[i]
+          if (response['status']==202){
+            x['record_sent']=true
+          }
           if (x['entity']=='EC'){
             if(table !== null){
               addRecordToTable(table, x)
             }
           }
-          var line = JSON.stringify(tmp_array_of_records[i])+'\n'
+          var line = JSON.stringify(array_of_records[i])+'\n'
           body+=line
         }
 
@@ -536,9 +538,8 @@ export class HomePage {
               .catch(err => alert('tmp to db file replacement error: '+err)))
             .catch(err => alert('db file removal error: '+err)))
           .catch(err => alert('tmp file saving error: '+err))
-
-      }
     }
+
     // removeDbFile(){
     //   // TESTING
     //   File.removeFile(path, db_file_name).then(str => alert(JSON.stringify(str)))

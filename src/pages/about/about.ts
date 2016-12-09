@@ -1,6 +1,7 @@
 import { Component } from '@angular/core'
 import { NavController } from 'ionic-angular'
 import { File } from 'ionic-native'
+import { Network } from 'ionic-native';
 
 declare var cordova: any
 
@@ -34,9 +35,9 @@ export function displayHistory(history){
   * reads through saved records and adds max 100 records to table
   */
   var table: HTMLTableElement = <HTMLTableElement> document.getElementById('history_table')
-  table.innerHTML = ''
+  table.innerHTML = '<tr><th>Datum</th><th>EC</th><th>Verstuurd</th></tr>'
 
-  var tr = table.insertRow(0)
+  var tr = table.insertRow(1)
   var th_date = tr.insertCell(0)
   var th_ec = tr.insertCell(1)
   var th_sent = tr.insertCell(2)
@@ -78,11 +79,7 @@ export class AboutPage {
     // // window.addEventListener("pageshow", onPageShow, false)
     //
       // this.visualiseHistory()
-
   }
-
-
-
 
   visualiseHistory(){
     /**
