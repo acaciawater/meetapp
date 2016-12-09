@@ -82,10 +82,31 @@ class Record {
   }
 }
 
-function saveMeasurement(){
-  alert('blaaalala')
-  this.saveMeasurement()
+function addRecordToTable(table, record){
+  // DEZE FUNCTIE STAAT OOK IN ABOUT.TS
+  alert('init add recorda to table')
+  var datetime = record['date']
+  var ec = record['value']
+  var sent = record['record_sent']
+  var tr = table.insertRow(1)
+  var td_date = tr.insertCell(0)
+  var td_ec = tr.insertCell(1)
+  var td_sent = tr.insertCell(2)
+  td_date.innerHTML = datetime
+  td_ec.innerHTML = ec
+  if (sent){
+    td_sent.innerHTML = 'Ja'
+  }
+  else {
+    td_sent.innerHTML = 'Nee'
+  }
 }
+
+
+// function saveMeasurement(){
+//   alert('blaaalala')
+//   this.saveMeasurement()
+// }
 
 function clone(obj) {
   /**
@@ -440,6 +461,7 @@ export class HomePage {
       * expects content of saved file as string
       * makes two arrays of dictionaries by cloning, one to send, other to save
       */
+      alert('init sendData')
       tmp_array_of_records = []
       clone_array_for_api = []
       var headers = new Headers();
@@ -457,6 +479,7 @@ export class HomePage {
       }
 
       var body = JSON.stringify({objects:clone_array_for_api})
+      alert('end sendData')
       this.http.patch(api_url_https, body, {headers: headers}).subscribe(api_response => this.saveArrayOfRecords(api_response))
     }
 
@@ -468,6 +491,28 @@ export class HomePage {
       saves the records in a temporary file
       replaces original db file with it
       */
+      // alert('init saveArrayOfRecords')
+      alert('init saveArrayOfRecords with resp = '+JSON.parse(JSON.stringify(api_response))['status'])
+
+      var table :HTMLTableElement
+
+      try {
+      table = <HTMLTableElement> document.getElementById('history_table')
+      alert(table.id)
+      table.innerHTML = ''
+      var tr = table.insertRow(0)
+      var th_date = tr.insertCell(0)
+      var th_ec = tr.insertCell(1)
+      var th_sent = tr.insertCell(2)
+      th_date.innerHTML = 'Datum'
+      th_ec.innerHTML = 'EC'
+      th_sent.innerHTML = 'Verstuurd'
+      alert('JE HEBT EM!'+table.outerHTML)
+      }
+      catch(err){
+        alert('err = '+err.message)
+      }
+
 
       var response = JSON.parse(JSON.stringify(api_response))
       if (response['status']==202){
@@ -475,6 +520,11 @@ export class HomePage {
         for (var i=0; i<=tmp_array_of_records.length-1; i++){
           var x = tmp_array_of_records[i]
           x['record_sent']=true
+          if (x['entity']=='EC'){
+            if(table !== null){
+              addRecordToTable(table, x)
+            }
+          }
           var line = JSON.stringify(tmp_array_of_records[i])+'\n'
           body+=line
         }

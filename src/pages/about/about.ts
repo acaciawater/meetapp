@@ -9,7 +9,27 @@ var dir_name = 'AcaciaData'
 var file_name = 'measurement_table.csv'
 var path = ''
 
-function displayHistory(history){
+function addRecordToTable(table, record){
+  // DEZE FUNCTIE STAAT OOK IN HOME.TS
+  var datetime = record['date']
+  var ec = record['value']
+  var sent = record['record_sent']
+  var tr = table.insertRow(1)
+  var td_date = tr.insertCell(0)
+  var td_ec = tr.insertCell(1)
+  var td_sent = tr.insertCell(2)
+  td_date.innerHTML = datetime
+  td_ec.innerHTML = ec
+  if (sent){
+    td_sent.innerHTML = 'Ja'
+  }
+  else {
+    td_sent.innerHTML = 'Nee'
+  }
+}
+
+
+export function displayHistory(history){
   /**
   * reads through saved records and adds max 100 records to table
   */
@@ -25,24 +45,10 @@ function displayHistory(history){
   th_sent.innerHTML = 'Verstuurd'
 
   var row = history.split('\n')
-  for (var line = row.length-2; ((line >= 0)&&(line>row.length-100)); line--){
+  for (var line = 0; ((line <= row.length-2) && (line < 100)); line++){
     var obj = JSON.parse(row[line])
     if (obj['entity']=='EC'){
-      var datetime = obj['date']
-      var ec = obj['value']
-      var sent = obj['record_sent']
-      var tr = table.insertRow(1)
-      var td_date = tr.insertCell(0)
-      var td_ec = tr.insertCell(1)
-      var td_sent = tr.insertCell(2)
-      td_date.innerHTML = datetime
-      td_ec.innerHTML = ec
-      if (sent){
-        td_sent.innerHTML = 'Ja'
-      }
-      else {
-        td_sent.innerHTML = 'Nee'
-      }
+      addRecordToTable(table, obj)
     }
   }
 }
@@ -65,7 +71,7 @@ export class AboutPage {
     }
     // window.addEventListener('load',onPageShow)
     // function onPageShow() {
-    //   alert('abii')
+    //   alert('load')
     // }
 
     // document.getElementById("history_table").addEventListener("load", onPageShow)
