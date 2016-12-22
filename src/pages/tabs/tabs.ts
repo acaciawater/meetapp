@@ -14,5 +14,11 @@ export class TabsPage {
 
   constructor() {
 
+
   }
+
+  home(){
+    return this.tab1Root
+  }
+
 }

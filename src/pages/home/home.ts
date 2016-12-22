@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { NavController } from 'ionic-angular';
+import { NavController, Platform } from 'ionic-angular';
 import { File } from 'ionic-native';
 import { Geolocation } from 'ionic-native';
 import { Device } from 'ionic-native';
@@ -267,17 +267,14 @@ function toggleLogging() {
 
 export class HomePage {
   public value = 'A';
-  constructor(
-    public navCtrl: NavController, private http:Http) {
+  public online = null;
+  constructor(public navCtrl: NavController, private http:Http) {
 
       document.addEventListener("deviceready", onDeviceReady, false);
+
       function onDeviceReady() {
-        // alert("Device Ready");
-        var online = Observable.fromEvent(document, 'online')
-        online.subscribe(()=>{
-          alert('connection!')
-          this.readFileContents()
-        })
+        alert("Device Ready");
+        alert('value is = '+ this.value)
         uuid = Device.device.uuid;
         // latlon = '(x;y)';
         record_sent = false;
@@ -294,8 +291,114 @@ export class HomePage {
         }
         ).catch(err => alert('isLOC error'+JSON.stringify(err)))
       };
+
     }
 
+    // ionViewDidLoad(){
+    //   alert(this.platform.ready)
+    // }
+
+    // ionViewDidLoad(){
+    //   // this.platform.ready().then(_ => alert('joepiee'))
+    //   //   .catch(err => alert(err.message))
+    //   this.platform.ready().then((readySource) => {
+    //     alert("platform ready"+ readySource)
+    //   })
+    // }
+  //
+
+  // ionViewDidLoad(){
+  //   function createObservable(){
+  //     alert('init ionViewDidLoad')
+  //   }
+  //   setTimeout(createObservable, 5000);
+  // }
+
+  // ionViewDidLoad(){
+  //     alert('init ionViewDidLoad')
+  //     alert('this.onlin = '+this.online)
+  //     if (this.online == null){
+  //       alert('observable creating start')
+  //       this.online = Observable.fromEvent(document, 'online')
+  //       this.online.subscribe(()=>{
+  //         alert('connection!')
+  //         base_path = cordova.file.dataDirectory;
+  //         dir_name = 'AcaciaData';
+  //         path = base_path+dir_name;
+  //         db_file_name = 'measurement_table.csv';
+  //         try{this.readFileContents(path,db_file_name)}
+  //         catch(err){alert(err)}
+  //       })
+  //     }
+  //   }
+
+
+
+
+  ionViewDidLoad(){
+    function createObservable(home){
+      alert('init ionViewDidLoad')
+
+      // base_path = cordova.file.dataDirectory;
+      // dir_name = 'AcaciaData';
+      // db_file_name = 'measurement_table.csv';
+      // path = base_path+dir_name;
+
+      alert('this.onlin = '+home.online)
+      if (home.online == null){
+        alert('observable creating start')
+        home.online = Observable.fromEvent(document, 'online')
+        home.online.subscribe(()=>{
+          alert('connection!')
+          base_path = cordova.file.dataDirectory;
+          dir_name = 'AcaciaData';
+          path = base_path+dir_name;
+          db_file_name = 'measurement_table.csv';
+          try{home.readFileContents(path,db_file_name)}
+          catch(err){alert(err)}
+        })
+      }
+    }
+    setTimeout(function(){createObservable(this);}, 10000);
+  }
+
+
+
+
+
+  // ionViewDidLoad(){
+  //   function createObservable(home){
+  //     alert('init ionViewDidLoad')
+  //
+  //     // base_path = cordova.file.dataDirectory;
+  //     // dir_name = 'AcaciaData';
+  //     // db_file_name = 'measurement_table.csv';
+  //     // path = base_path+dir_name;
+  //
+  //     alert('this.onlin = '+home.online)
+  //     if (home.online == null){
+  //       alert('observable creating start')
+  //       home.online = Observable.fromEvent(document, 'online')
+  //       home.online.subscribe(()=>{
+  //         alert('connection!')
+  //         base_path = cordova.file.dataDirectory;
+  //         dir_name = 'AcaciaData';
+  //         path = base_path+dir_name;
+  //         db_file_name = 'measurement_table.csv';
+  //         try{home.readFileContents(path,db_file_name)}
+  //         catch(err){alert(err)}
+  //       })
+  //     }
+  //   }
+  //   setTimeout(function(){createObservable(this);}, 10000);
+  // }
+
+
+
+
+  alertBS(){
+  alert('BS')
+  }
 
   startStop() {
     /**
@@ -383,7 +486,7 @@ export class HomePage {
       /**
       * this function starts the saviong process by first checking if gps is turned on, then asking for the location
       * this function triggers a cascade effect of chained functions that return promises. the order of wich is:
-      * 1 getCurrentPosition, 2saveMeasurement() , 3writeFile(), 4readFileContents(), 5sendData(), 6HTTP.post()
+      * 1 getCurrentPosition, 2saveMeasurement() , 3writeFile(), 4readFileContents), 5sendData(), 6HTTP.post()
       */
 
       Diagnostic.isLocationAvailable().then((resp) => {
@@ -398,16 +501,13 @@ export class HomePage {
         }
       }
       ).catch(err => alert('isLOC error'+JSON.stringify(err)))
-
     }
 
     saveMeasurement(location){
-
       /**
       * checks to see if the app already created a directory to save file in and creates it if needed
       * triggers writeFile
       */
-
       alert('init saveMeasurement with EC set to = '+ec_value)
 
       var latit = location.coords.latitude
@@ -417,7 +517,6 @@ export class HomePage {
       var horizontal_accuracy = location.coords.accuracy
       var altitude = location.coords.altitude
       var vertical_accuracy = location.coords.altitudeAccuracy
-
       var datetime = getCurrentDateTime()
       var ec_entity = 'EC'
       var ec_unit = 'µS/cm'
@@ -438,7 +537,7 @@ export class HomePage {
     }
     writeFile(path, file_name, ec_data, tmp_data){
       /**
-      * writes to file and triggers readFileContents()
+      * writes to file and triggers readFileContents)
       */
       alert('init writeFile')
       ec_data += '\n'
@@ -446,16 +545,16 @@ export class HomePage {
       // File.writeFile(path, file_name, data, false).then(_ => alert('writeFile success path = '+path+' file_name = '+file_name+' data = '+data)).catch(err => alert('writeFile '+JSON.stringify(err)+ ' path = '+path+' file_name = '+file_name+' data = '+data));
       File.writeFile(path, file_name, ec_data, {append:true})
         .then(_ => File.writeFile(path, file_name, tmp_data, {append:true})
-          .then(_ => this.readFileContents())
+          .then(_ => this.readFileContents(path, file_name))
           .catch(err => alert('createFile '+JSON.stringify(err))))
         .catch(err => alert('createFile '+JSON.stringify(err)))
     }
-    readFileContents(){
+    readFileContents(path, file_name){
       /**
       * writes to file and triggers sendData()
       */
-      File.readAsText(path+'/', db_file_name).then(text => this.sendData(text)).catch(err => alert('readFilecontents: path = '+path+'/'+db_file_name+'readAsText error ='+JSON.stringify(err)))
-      .catch(err => alert('readAsText file reading failed at : '+path+'/'+db_file_name+'. Error = '+JSON.stringify(err)))
+      File.readAsText(path+'/', file_name).then(text => this.sendData(text)).catch(err => alert('readFilecontents: path = '+path+'/'+file_name+'readAsText error ='+JSON.stringify(err)))
+      .catch(err => alert('readAsText file reading failed at : '+path+'/'+file_name+'. Error = '+JSON.stringify(err)))
     }
 
     sendData(text){
@@ -482,13 +581,22 @@ export class HomePage {
 
       var body = JSON.stringify({objects:clone_array_for_api})
       alert('jsut before end sendData')
-
+      alert(Network.connection)
+      alert(Network.connection!=='none')
       if (Network.connection!=='none'){
+        alert('before this.http')
+        alert(typeof(this.http))
+        alert(api_url_https+'    '+body+'      '+headers)
+        // this.http.patch(api_url_https, body, {headers: headers}).subscribe(api_response => alert(JSON.stringify(api_response)))
         this.http.patch(api_url_https, body, {headers: headers}).subscribe(api_response => this.saveArrayOfRecords(api_response, tmp_array_of_records))
+        alert('after this.http')
       }
-      if (Network.connection =='none'){
+      else if (Network.connection =='none'){
         // if no internet
         this.saveArrayOfRecords({'status': 'nointernet'}, tmp_array_of_records)
+      }
+      else{
+        alert('ended up in else clause somehow')
       }
     }
 

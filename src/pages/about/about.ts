@@ -37,14 +37,6 @@ export function displayHistory(history){
   var table: HTMLTableElement = <HTMLTableElement> document.getElementById('history_table')
   table.innerHTML = '<tr><th>Datum</th><th>EC</th><th>Verstuurd</th></tr>'
 
-  var tr = table.insertRow(1)
-  var th_date = tr.insertCell(0)
-  var th_ec = tr.insertCell(1)
-  var th_sent = tr.insertCell(2)
-  th_date.innerHTML = 'Datum'
-  th_ec.innerHTML = 'EC'
-  th_sent.innerHTML = 'Verstuurd'
-
   var row = history.split('\n')
   for (var line = 0; ((line <= row.length-2) && (line < 100)); line++){
     var obj = JSON.parse(row[line])
