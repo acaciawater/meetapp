@@ -8,6 +8,9 @@ import { Diagnostic } from 'ionic-native';
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/fromEvent';
 import { Network } from 'ionic-native';
+import 'rxjs/add/operator/map';
+
+
 
 declare var serial;
 declare var cordova: any;
@@ -83,6 +86,11 @@ class Record {
     record['record_sent'] = this.record_sent;
     return JSON.stringify(record);
   }
+}
+
+function removeFWSlashes(s)
+{
+    return s.replace(/\/$/, "");
 }
 
 function addRecordToTable(table, record){
@@ -208,6 +216,15 @@ function reformatFiles(entries){
   }
 }
 
+function testFunctionality(path, file_name){
+  // File.readAsText(path+'/', file_name).then(_ => alert("succesfully read")).catch(err => alert('readAsText file reading failed at : '+path+'/'+file_name+'. Error = '+JSON.stringify(err)))
+  var table :HTMLTableElement
+  table = <HTMLTableElement> document.getElementById('history_table')
+  alert(table.id)
+  var base_path = cordova.file.dataDirectory
+  alert("base path = "+ base_path)
+}
+
 function enableSendButton(){
   var send_record_button = <HTMLInputElement> document.getElementById('send_record')
   send_record_button.disabled = false;
@@ -260,6 +277,58 @@ function toggleLogging() {
   }
 }
 
+function      saveArrayOfRecords(api_response, array_of_records){
+        /**
+        expects the api_response
+        reads tmp_array_of_records
+        if 202 is returned, the record_sent value is changed
+        saves the records in a temporary file
+        replaces original db file with it
+        */
+        // alert('init saveArrayOfRecords')
+        alert('init saveArrayOfRecords with resp = '+JSON.parse(JSON.stringify(api_response))['status'])
+
+        var table :HTMLTableElement
+
+        try {
+        table = <HTMLTableElement> document.getElementById('history_table')
+        alert(table.id)
+        table.innerHTML = '<tr><th>Datum</th><th>EC</th><th>Verstuurd</th></tr>'
+        alert('JE HEBT EM!'+table.outerHTML)
+        }
+        catch(err){
+          alert('err = '+err.message)
+        }
+
+        var response = JSON.parse(JSON.stringify(api_response))
+          var body = ''
+          for (var i=0; i<=array_of_records.length-1; i++){
+            var x = array_of_records[i]
+            if (response['status']==202){
+              x['record_sent']=true
+            }
+            if (response['status']==201){
+              x['record_sent']=true
+            }
+            if (x['entity']=='EC'){
+              if(table !== null){
+                addRecordToTable(table, x)
+              }
+            }
+            var line = JSON.stringify(array_of_records[i])+'\n'
+            body+=line
+          }
+
+          File.writeFile(path, tmp_file_name, body, {append:false})
+            .then(_ => File.removeFile(path, db_file_name)
+              .then(_ => File.moveFile(path, tmp_file_name, path, db_file_name)
+                .then(path => enableSendButton())
+                .catch(err => alert('tmp to db file replacement error: '+err)))
+              .catch(err => alert('db file removal error: '+err)))
+            .catch(err => alert('tmp file saving error: '+err))
+      }
+
+
 @Component({
   selector: 'page-home',
   templateUrl: 'home.html'
@@ -270,11 +339,21 @@ export class HomePage {
   public online = null;
   constructor(public navCtrl: NavController, private http:Http) {
 
-      document.addEventListener("deviceready", onDeviceReady, false);
+      document.addEventListener("deviceready", function(){onDeviceReady(this)}, false);
 
-      function onDeviceReady() {
+// koppel alle sync functionaliteit los (je kan readfilecontesnts, senddata, saveArrayOfRecords)
+// check db files zet sync aan of uit
+// knop actief non actief
+// meting knop drukken, triggert sync functionaliteit die triggert knop!
+//
+//
+//
+
+
+
+      function onDeviceReady(home) {
         alert("Device Ready");
-        alert('value is = '+ this.value)
+        alert('value is = '+ home.value)
         uuid = Device.device.uuid;
         // latlon = '(x;y)';
         record_sent = false;
@@ -290,80 +369,26 @@ export class HomePage {
           }
         }
         ).catch(err => alert('isLOC error'+JSON.stringify(err)))
+
+        // create connection check observable
+        if (home.online == null){
+          alert('observable creating start')
+          home.online = Observable.fromEvent(document, 'online')
+          home.online.subscribe(()=>{
+            alert('connection!')
+            base_path = cordova.file.dataDirectory;
+            dir_name = 'AcaciaData';
+            path = base_path+dir_name;
+            db_file_name = 'measurement_table.csv';
+            try{home.readFileContents(path,db_file_name)}
+            catch(err){alert(err)}
+          })
+        }
+
+
       };
 
     }
-
-    // ionViewDidLoad(){
-    //   alert(this.platform.ready)
-    // }
-
-    // ionViewDidLoad(){
-    //   // this.platform.ready().then(_ => alert('joepiee'))
-    //   //   .catch(err => alert(err.message))
-    //   this.platform.ready().then((readySource) => {
-    //     alert("platform ready"+ readySource)
-    //   })
-    // }
-  //
-
-  // ionViewDidLoad(){
-  //   function createObservable(){
-  //     alert('init ionViewDidLoad')
-  //   }
-  //   setTimeout(createObservable, 5000);
-  // }
-
-  // ionViewDidLoad(){
-  //     alert('init ionViewDidLoad')
-  //     alert('this.onlin = '+this.online)
-  //     if (this.online == null){
-  //       alert('observable creating start')
-  //       this.online = Observable.fromEvent(document, 'online')
-  //       this.online.subscribe(()=>{
-  //         alert('connection!')
-  //         base_path = cordova.file.dataDirectory;
-  //         dir_name = 'AcaciaData';
-  //         path = base_path+dir_name;
-  //         db_file_name = 'measurement_table.csv';
-  //         try{this.readFileContents(path,db_file_name)}
-  //         catch(err){alert(err)}
-  //       })
-  //     }
-  //   }
-
-
-
-
-  ionViewDidLoad(){
-    function createObservable(home){
-      alert('init ionViewDidLoad')
-
-      // base_path = cordova.file.dataDirectory;
-      // dir_name = 'AcaciaData';
-      // db_file_name = 'measurement_table.csv';
-      // path = base_path+dir_name;
-
-      alert('this.onlin = '+home.online)
-      if (home.online == null){
-        alert('observable creating start')
-        home.online = Observable.fromEvent(document, 'online')
-        home.online.subscribe(()=>{
-          alert('connection!')
-          base_path = cordova.file.dataDirectory;
-          dir_name = 'AcaciaData';
-          path = base_path+dir_name;
-          db_file_name = 'measurement_table.csv';
-          try{home.readFileContents(path,db_file_name)}
-          catch(err){alert(err)}
-        })
-      }
-    }
-    setTimeout(function(){createObservable(this);}, 10000);
-  }
-
-
-
 
 
   // ionViewDidLoad(){
@@ -393,12 +418,32 @@ export class HomePage {
   //   setTimeout(function(){createObservable(this);}, 10000);
   // }
 
+  // ionViewDidLoad(){
+  //     alert('init ionViewDidLoad')
+  //     alert('this.onlin = '+this.online)
+  //     if (this.online == null){
+  //       alert('observable creating start')
+  //       this.online = Observable.fromEvent(document, 'online')
+  //       this.online.subscribe(()=>{
+  //         alert('connection!')
+  //         base_path = cordova.file.dataDirectory;
+  //         dir_name = 'AcaciaData';
+  //         path = base_path+dir_name;
+  //         db_file_name = 'measurement_table.csv';
+  //         try{this.readFileContents(path,db_file_name)}
+  //         catch(err){alert(err)}
+  //       })
+  //     }
+  //   }
+
+  // ionViewDidLoad(){
+  //     alert('init ionViewDidLoad')
+  //     var path = 'abi'
+  //     var file_name = 'abbii'
+  //     testFunctionality(path, file_name)
+  //   }
 
 
-
-  alertBS(){
-  alert('BS')
-  }
 
   startStop() {
     /**
@@ -473,7 +518,7 @@ export class HomePage {
       );
     },
     function error(evt){
-      alert('C ' +JSON.stringify(evt));
+      alert('Geen sensor gevonden\nNo sensor found');
     },
     );
   }
@@ -557,19 +602,20 @@ export class HomePage {
       .catch(err => alert('readAsText file reading failed at : '+path+'/'+file_name+'. Error = '+JSON.stringify(err)))
     }
 
-    sendData(text){
+
+   sendData(text){
       /**
       * expects content of saved file as string
       * makes two arrays of dictionaries by cloning, one to send, other to save
       */
       alert('init sendData')
       var tmp_array_of_records = []
+      var body = ''
       var clone_array_for_api = []
       var headers = new Headers();
       var auth = 'Basic '+encoded
       headers.append('Authorization' , auth);
       headers.append('Content-Type', 'application/json');
-      var json_str = '{"date": "2016-12-01T10:30:00", "elevation": -2.2, "entity": "EC", "hacc": 3.0, "laitude": 52.62, "longitude": 4.54, "phone": "", "sensor": "WaterEC197", "unit": "µS/cm", "vacc": 12.0, "value": 197.0}'
       var row = text.split('\n')
       for (var line = row.length-2; line >= 0; line--){
         var obj = JSON.parse(row[line])
@@ -578,75 +624,32 @@ export class HomePage {
         delete cl['record_sent']
         clone_array_for_api.push(cl)
       }
-
-      var body = JSON.stringify({objects:clone_array_for_api})
       alert('jsut before end sendData')
-      alert(Network.connection)
-      alert(Network.connection!=='none')
       if (Network.connection!=='none'){
         alert('before this.http')
-        alert(typeof(this.http))
-        alert(api_url_https+'    '+body+'      '+headers)
-        // this.http.patch(api_url_https, body, {headers: headers}).subscribe(api_response => alert(JSON.stringify(api_response)))
-        this.http.patch(api_url_https, body, {headers: headers}).subscribe(api_response => this.saveArrayOfRecords(api_response, tmp_array_of_records))
-        alert('after this.http')
+        this.http
+          .get('https://meet.acaciadata.com/api/v1/sensor/?sensor_id='+ec_sensor_id, {headers:headers})
+          .map(response => response.json())
+          .subscribe(
+            res => {
+              var sensor_pk = res.objects[0].resource_uri
+              for (var ob = clone_array_for_api.length-1; ob >= 0; ob--){
+                clone_array_for_api[ob]['sensor_pk'] = sensor_pk
+              }
+              body = JSON.stringify({objects:clone_array_for_api})
+              alert(body)
+              this.http.patch(api_url_https, body, {headers: headers}).subscribe(api_response => saveArrayOfRecords(api_response, tmp_array_of_records))
+            }
+          )
       }
       else if (Network.connection =='none'){
         // if no internet
-        this.saveArrayOfRecords({'status': 'nointernet'}, tmp_array_of_records)
+        saveArrayOfRecords({'status': 'nointernet'}, tmp_array_of_records)
       }
       else{
         alert('ended up in else clause somehow')
       }
-    }
-
-    saveArrayOfRecords(api_response, array_of_records){
-      /**
-      expects the api_response
-      reads tmp_array_of_records
-      if 202 is returned, the record_sent value is changed
-      saves the records in a temporary file
-      replaces original db file with it
-      */
-      // alert('init saveArrayOfRecords')
-      alert('init saveArrayOfRecords with resp = '+JSON.parse(JSON.stringify(api_response))['status'])
-
-      var table :HTMLTableElement
-
-      try {
-      table = <HTMLTableElement> document.getElementById('history_table')
-      alert(table.id)
-      table.innerHTML = '<tr><th>Datum</th><th>EC</th><th>Verstuurd</th></tr>'
-      alert('JE HEBT EM!'+table.outerHTML)
-      }
-      catch(err){
-        alert('err = '+err.message)
-      }
-
-      var response = JSON.parse(JSON.stringify(api_response))
-        var body = ''
-        for (var i=0; i<=array_of_records.length-1; i++){
-          var x = array_of_records[i]
-          if (response['status']==202){
-            x['record_sent']=true
-          }
-          if (x['entity']=='EC'){
-            if(table !== null){
-              addRecordToTable(table, x)
-            }
-          }
-          var line = JSON.stringify(array_of_records[i])+'\n'
-          body+=line
-        }
-
-        File.writeFile(path, tmp_file_name, body, {append:false})
-          .then(_ => File.removeFile(path, db_file_name)
-            .then(_ => File.moveFile(path, tmp_file_name, path, db_file_name)
-              .then(path => enableSendButton())
-              .catch(err => alert('tmp to db file replacement error: '+err)))
-            .catch(err => alert('db file removal error: '+err)))
-          .catch(err => alert('tmp file saving error: '+err))
-    }
+  }
 
     // removeDbFile(){
     //   // TESTING
