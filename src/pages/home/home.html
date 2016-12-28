@@ -1,5 +1,7 @@
   <ion-content padding>
   <div class="outer_div">
+    <div id = 'warning' class="sync_warning"><span>Er zijn onverstuurde metingen<br>Druk op Sync als u verbinding heeft</span></div>
+    <button id = 'sync' class="sync_button" disabled="true" (click)="triggerReadFileContents()">Sync</button>
     <div class="logo_container">
     <img src="assets/pics/logo.jpg" alt="" />
 
@@ -14,7 +16,7 @@
       <div class='unit_tmp'>°Celsius</div>
       <button id = 'startStop' class="big_button" disabled="true" (click)="startStop()">Start</button>
       <button id = 'send_record' class="big_button" disabled="true" (click)="startSavingSendingProcess()">Meten</button>
-      
+
   </div>
 
   <!-- <button class="big_button" (click)="alertFileContents()">checkfile</button> -->

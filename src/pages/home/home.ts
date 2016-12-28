@@ -35,6 +35,7 @@ var db_file_name = ''
 var is_logging = false
 var path = ''
 var encoded = ''
+var db_file_name = ''
 // var tmp_array_of_records = []
 // var clone_array_for_api = []
 var has_gps = false
@@ -93,6 +94,17 @@ function removeFWSlashes(s)
     return s.replace(/\/$/, "");
 }
 
+function makeFloat(ec_value) {
+    var result = parseFloat(ec_value)
+    if (isNaN(result)) {
+        return -1
+    }
+    else {
+        return result
+    }
+}
+
+
 function addRecordToTable(table, record){
   // DEZE FUNCTIE STAAT OOK IN ABOUT.TS
   alert('init add recorda to table')
@@ -114,6 +126,7 @@ function addRecordToTable(table, record){
 }
 
 
+
 // function saveMeasurement(){
 //   alert('blaaalala')
 //   this.saveMeasurement()
@@ -129,6 +142,22 @@ function clone(obj) {
         if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
     }
     return copy;
+}
+
+function checkSubString(str, substr) {
+    return str.indexOf(substr) !== -1
+}
+
+function checkSensorID(ec_sensor_id) {
+    if (checkSubString(ec_sensor_id, ',')) {
+        var a = ec_sensor_id.split(',')
+        for (var i = 0; i < a.length; i++) {
+            if (checkSubString(a[i], 'Water')) {
+                ec_sensor_id = a[i]
+            }
+        }
+    }
+    return ec_sensor_id
 }
 
 function getCurrentDateTime(){
@@ -148,6 +177,26 @@ function getCurrentDateTime(){
   return time;
 }
 
+function checkSyncStatus(){
+  function check(text){
+    var row = text.split('\n')
+    for (var line = row.length-2; line >= 0; line--){
+      var obj = JSON.parse(row[line])
+      if (obj['record_sent'] == false) {
+        enableSyncButton()
+        enableStartStopButton()
+        return null
+      }
+    }
+    enableStartStopButton()
+  }
+  File.readAsText(path+'/', db_file_name)
+  .then(text => {
+    check(text)})
+  .catch(err => alert('checkSync, readAsText failed at : '+path+'/'+db_file_name+'. Error = '+JSON.stringify(err)))
+
+}
+
 function checkDatabaseFiles(){
   /**
   this function is called upon device ready
@@ -160,6 +209,7 @@ function checkDatabaseFiles(){
 }
 
 function reformatFiles(entries){
+  alert(JSON.stringify(entries))
   /**
   expects files found in the application directory
   if none are found, its ok (first time app has been installed)
@@ -184,7 +234,8 @@ function reformatFiles(entries){
   }
   if (db_file&&!tmp_db_file){
     // if only db file
-    enableStartStopButton()
+    alert(db_file+'\n'+tmp_db_file)
+    checkSyncStatus()
   }
   if (!db_file&&!tmp_db_file){
     //  if neither
@@ -193,7 +244,7 @@ function reformatFiles(entries){
   if (!db_file&&tmp_db_file){
     // if only tmp file rename it
           File.moveFile(path, tmp_file_name, path, db_file_name)
-          .then(_ => enableStartStopButton())
+          .then(_ => checkSyncStatus())
           .catch(err => alert('tmp to db file replacement error: '+JSON.stringify(err)))
   }
   if(db_file&&tmp_db_file){
@@ -205,31 +256,65 @@ function reformatFiles(entries){
         File.removeFile(path, db_file_name)
           .then(_ =>
             File.moveFile(path, tmp_file_name, path, db_file_name)
-              .then(_ => enableStartStopButton())
+              .then(_ => checkSyncStatus())
               .catch(err => alert('error moving tmp to db file, error = '+JSON.stringify(err))))
           .catch(err => alert('error removing file, '+JSON.stringify(err))))
       // file is corrupt
       .catch(_ =>
         File.removeFile(path, tmp_file_name)
-          .then(succ => enableStartStopButton())
+          .then(succ => checkSyncStatus())
           .catch(err => alert('failed removing file'+JSON.stringify(err))))
   }
 }
 
-function testFunctionality(path, file_name){
-  // File.readAsText(path+'/', file_name).then(_ => alert("succesfully read")).catch(err => alert('readAsText file reading failed at : '+path+'/'+file_name+'. Error = '+JSON.stringify(err)))
-  var table :HTMLTableElement
-  table = <HTMLTableElement> document.getElementById('history_table')
-  alert(table.id)
-  var base_path = cordova.file.dataDirectory
-  alert("base path = "+ base_path)
+// function testFunctionality(path, file_name){
+//   // File.readAsText(path+'/', file_name).then(_ => alert("succesfully read")).catch(err => alert('readAsText file reading failed at : '+path+'/'+file_name+'. Error = '+JSON.stringify(err)))
+//   var table :HTMLTableElement
+//   table = <HTMLTableElement> document.getElementById('history_table')
+//   alert(table.id)
+//   var base_path = cordova.file.dataDirectory
+//   alert("base path = "+ base_path)
+// }
+
+function toggleSyncButton(response){
+  if (response['status']==202 || response['status']==201 ){
+      disableSyncButton()
+  }
+  if (response['status']!==202 && response['status']!==201 ){
+      enableSyncButton()
+  }
+}
+
+function enableSyncButton(){
+  var warning = <HTMLDivElement> document.getElementById('warning')
+  var sync_button = <HTMLInputElement> document.getElementById('sync')
+  warning.style.visibility = 'visible'
+  setTimeout(function() {
+    warning.style.visibility = 'hidden'
+  }, 4000);
+  setTimeout(function() {
+    sync_button.disabled = false;
+    sync_button.style.visibility = 'visible'
+    sync_button.style.background = '#3688C2'
+  }, 4200);
+}
+
+
+function disableSyncButton(){
+  var sync_button = <HTMLInputElement> document.getElementById('sync')
+  sync_button.disabled = true
+  sync_button.style.visibility = 'hidden'
+  sync_button.style.background = '#808080'
 }
 
 function enableSendButton(){
-  var send_record_button = <HTMLInputElement> document.getElementById('send_record')
-  send_record_button.disabled = false;
-  send_record_button.style.background = '#3688C2';
+  if (ec_value!==''){
+    var send_record_button = <HTMLInputElement> document.getElementById('send_record')
+    send_record_button.disabled = false;
+    send_record_button.style.background = '#3688C2';
+  }
 }
+
 function disableSendButton(){
   var send_record_button = <HTMLInputElement> document.getElementById('send_record')
   send_record_button.disabled = true;
@@ -237,9 +322,9 @@ function disableSendButton(){
 }
 
 function enableStartStopButton(){
-  var send_record_button = <HTMLInputElement> document.getElementById('startStop')
-  send_record_button.disabled = false;
-  send_record_button.style.background = '#3688C2';
+  var start_stop_button = <HTMLInputElement> document.getElementById('startStop')
+  start_stop_button.disabled = false;
+  start_stop_button.style.background = '#3688C2';
 }
 
 function displayValue(ec_value, temperature_value){
@@ -277,56 +362,52 @@ function toggleLogging() {
   }
 }
 
-function      saveArrayOfRecords(api_response, array_of_records){
-        /**
-        expects the api_response
-        reads tmp_array_of_records
-        if 202 is returned, the record_sent value is changed
-        saves the records in a temporary file
-        replaces original db file with it
-        */
-        // alert('init saveArrayOfRecords')
-        alert('init saveArrayOfRecords with resp = '+JSON.parse(JSON.stringify(api_response))['status'])
+function saveArrayOfRecords(api_response, array_of_records){
+  /**
+  expects the api_response
+  reads tmp_array_of_records
+  if 202 is returned, the record_sent value is changed
+  saves the records in a temporary file
+  replaces original db file with it
+  */
+  // alert('init saveArrayOfRecords')
+  alert('init saveArrayOfRecords with resp = '+JSON.parse(JSON.stringify(api_response))['status'])
+  var table :HTMLTableElement
+  try {
+  table = <HTMLTableElement> document.getElementById('history_table')
+  alert(table.id)
+  table.innerHTML = '<tr><th>Datum</th><th>EC</th><th>Verstuurd</th></tr>'
+  alert('JE HEBT EM!'+table.outerHTML)
+  }
+  catch(err){
+    alert('err = '+err.message)
+  }
 
-        var table :HTMLTableElement
-
-        try {
-        table = <HTMLTableElement> document.getElementById('history_table')
-        alert(table.id)
-        table.innerHTML = '<tr><th>Datum</th><th>EC</th><th>Verstuurd</th></tr>'
-        alert('JE HEBT EM!'+table.outerHTML)
-        }
-        catch(err){
-          alert('err = '+err.message)
-        }
-
-        var response = JSON.parse(JSON.stringify(api_response))
-          var body = ''
-          for (var i=0; i<=array_of_records.length-1; i++){
-            var x = array_of_records[i]
-            if (response['status']==202){
-              x['record_sent']=true
-            }
-            if (response['status']==201){
-              x['record_sent']=true
-            }
-            if (x['entity']=='EC'){
-              if(table !== null){
-                addRecordToTable(table, x)
-              }
-            }
-            var line = JSON.stringify(array_of_records[i])+'\n'
-            body+=line
-          }
-
-          File.writeFile(path, tmp_file_name, body, {append:false})
-            .then(_ => File.removeFile(path, db_file_name)
-              .then(_ => File.moveFile(path, tmp_file_name, path, db_file_name)
-                .then(path => enableSendButton())
-                .catch(err => alert('tmp to db file replacement error: '+err)))
-              .catch(err => alert('db file removal error: '+err)))
-            .catch(err => alert('tmp file saving error: '+err))
+  var response = JSON.parse(JSON.stringify(api_response))
+  toggleSyncButton(response)
+  var body = ''
+  for (var i=0; i<=array_of_records.length-1; i++){
+    var x = array_of_records[i]
+    if (response['status']==202 || response['status']==201 ){
+      x['record_sent']=true
+    }
+    if (x['entity']=='EC'){
+      if(table !== null){
+        addRecordToTable(table, x)
       }
+    }
+    var line = JSON.stringify(array_of_records[i])+'\n'
+    body+=line
+  }
+
+  File.writeFile(path, tmp_file_name, body, {append:false})
+    .then(_ => File.removeFile(path, db_file_name)
+      .then(_ => File.moveFile(path, tmp_file_name, path, db_file_name)
+        .then(path => enableSendButton())
+        .catch(err => alert('tmp to db file replacement error: '+err)))
+      .catch(err => alert('db file removal error: '+err)))
+    .catch(err => alert('tmp file saving error: '+err))
+}
 
 
 @Component({
@@ -337,6 +418,7 @@ function      saveArrayOfRecords(api_response, array_of_records){
 export class HomePage {
   public value = 'A';
   public online = null;
+
   constructor(public navCtrl: NavController, private http:Http) {
 
       document.addEventListener("deviceready", function(){onDeviceReady(this)}, false);
@@ -369,81 +451,9 @@ export class HomePage {
           }
         }
         ).catch(err => alert('isLOC error'+JSON.stringify(err)))
-
-        // create connection check observable
-        if (home.online == null){
-          alert('observable creating start')
-          home.online = Observable.fromEvent(document, 'online')
-          home.online.subscribe(()=>{
-            alert('connection!')
-            base_path = cordova.file.dataDirectory;
-            dir_name = 'AcaciaData';
-            path = base_path+dir_name;
-            db_file_name = 'measurement_table.csv';
-            try{home.readFileContents(path,db_file_name)}
-            catch(err){alert(err)}
-          })
-        }
-
-
       };
 
     }
-
-
-  // ionViewDidLoad(){
-  //   function createObservable(home){
-  //     alert('init ionViewDidLoad')
-  //
-  //     // base_path = cordova.file.dataDirectory;
-  //     // dir_name = 'AcaciaData';
-  //     // db_file_name = 'measurement_table.csv';
-  //     // path = base_path+dir_name;
-  //
-  //     alert('this.onlin = '+home.online)
-  //     if (home.online == null){
-  //       alert('observable creating start')
-  //       home.online = Observable.fromEvent(document, 'online')
-  //       home.online.subscribe(()=>{
-  //         alert('connection!')
-  //         base_path = cordova.file.dataDirectory;
-  //         dir_name = 'AcaciaData';
-  //         path = base_path+dir_name;
-  //         db_file_name = 'measurement_table.csv';
-  //         try{home.readFileContents(path,db_file_name)}
-  //         catch(err){alert(err)}
-  //       })
-  //     }
-  //   }
-  //   setTimeout(function(){createObservable(this);}, 10000);
-  // }
-
-  // ionViewDidLoad(){
-  //     alert('init ionViewDidLoad')
-  //     alert('this.onlin = '+this.online)
-  //     if (this.online == null){
-  //       alert('observable creating start')
-  //       this.online = Observable.fromEvent(document, 'online')
-  //       this.online.subscribe(()=>{
-  //         alert('connection!')
-  //         base_path = cordova.file.dataDirectory;
-  //         dir_name = 'AcaciaData';
-  //         path = base_path+dir_name;
-  //         db_file_name = 'measurement_table.csv';
-  //         try{this.readFileContents(path,db_file_name)}
-  //         catch(err){alert(err)}
-  //       })
-  //     }
-  //   }
-
-  // ionViewDidLoad(){
-  //     alert('init ionViewDidLoad')
-  //     var path = 'abi'
-  //     var file_name = 'abbii'
-  //     testFunctionality(path, file_name)
-  //   }
-
-
 
   startStop() {
     /**
@@ -479,6 +489,7 @@ export class HomePage {
                 tempor_values = ''
                 if (complete_input.indexOf('Water') >= 0){
                   ec_sensor_id = complete_input.replace(/\s/g,'')
+                  ec_sensor_id = checkSensorID(ec_sensor_id)
                   // alert('ec id = '+ec_sensor_id)
                   encoded = btoa(ec_sensor_id+':'+ec_sensor_id)
                   // headers['Authorization'] = 'Basic '+encoded
@@ -497,8 +508,12 @@ export class HomePage {
                     ec_value = ecv.toString()
                   }
                   displayValue(ec_value,temperature_value)
-                  if (ec_value!=='-1'){
+                  var ec_float = makeFloat(ec_value)
+                  if (ec_float>=0){
                     enableSendButton()
+                  }
+                  if (ec_float<0){
+                    disableSendButton()
                   }
                 }
                 if (is_logging){
@@ -534,13 +549,14 @@ export class HomePage {
       * 1 getCurrentPosition, 2saveMeasurement() , 3writeFile(), 4readFileContents), 5sendData(), 6HTTP.post()
       */
 
+      disableSendButton()
       Diagnostic.isLocationAvailable().then((resp) => {
         if (!resp){
           alert('Zet a.u.b. GPS aan')
+          enableSendButton()
         }
         if (resp){
           Geolocation.getCurrentPosition().then((resp) => {
-            disableSendButton()
             this.saveMeasurement(resp)
           }).catch(error => alert('GPS signaal error.\n'+ error))
         }
@@ -594,6 +610,18 @@ export class HomePage {
           .catch(err => alert('createFile '+JSON.stringify(err))))
         .catch(err => alert('createFile '+JSON.stringify(err)))
     }
+    triggerReadFileContents(){
+      // if this.online ==
+      var networkState = Network.connection
+      if (networkState=='none'){
+        alert('Geen internet\n No internet connection')
+      }
+      else{
+        disableSendButton()
+        this.readFileContents(path, db_file_name)
+      }
+    }
+
     readFileContents(path, file_name){
       /**
       * writes to file and triggers sendData()
@@ -608,14 +636,15 @@ export class HomePage {
       * expects content of saved file as string
       * makes two arrays of dictionaries by cloning, one to send, other to save
       */
+
+
+
+
+
       alert('init sendData')
       var tmp_array_of_records = []
       var body = ''
       var clone_array_for_api = []
-      var headers = new Headers();
-      var auth = 'Basic '+encoded
-      headers.append('Authorization' , auth);
-      headers.append('Content-Type', 'application/json');
       var row = text.split('\n')
       for (var line = row.length-2; line >= 0; line--){
         var obj = JSON.parse(row[line])
@@ -625,6 +654,17 @@ export class HomePage {
         clone_array_for_api.push(cl)
       }
       alert('jsut before end sendData')
+
+      if (encoded==''){
+        ec_sensor_id = obj['sensor']
+        encoded = btoa(ec_sensor_id+':'+ec_sensor_id)
+      }
+      alert('ec_sensor_id ='+ec_sensor_id)
+      var headers = new Headers();
+      var auth = 'Basic '+encoded
+      headers.append('Authorization' , auth);
+      headers.append('Content-Type', 'application/json');
+
       if (Network.connection!=='none'){
         alert('before this.http')
         this.http
@@ -637,7 +677,7 @@ export class HomePage {
                 clone_array_for_api[ob]['sensor_pk'] = sensor_pk
               }
               body = JSON.stringify({objects:clone_array_for_api})
-              alert(body)
+              alert(encoded+'\n'+JSON.stringify(headers)+'\n'+body)
               this.http.patch(api_url_https, body, {headers: headers}).subscribe(api_response => saveArrayOfRecords(api_response, tmp_array_of_records))
             }
           )
