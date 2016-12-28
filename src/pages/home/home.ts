@@ -1,11 +1,10 @@
 import { Component } from '@angular/core';
-import { NavController, Platform } from 'ionic-angular';
+import { NavController} from 'ionic-angular';
 import { File } from 'ionic-native';
 import { Geolocation } from 'ionic-native';
 import { Device } from 'ionic-native';
 import { Http, Headers } from '@angular/http';
 import { Diagnostic } from 'ionic-native';
-import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/fromEvent';
 import { Network } from 'ionic-native';
 import 'rxjs/add/operator/map';
@@ -15,9 +14,9 @@ import 'rxjs/add/operator/map';
 declare var serial;
 declare var cordova: any;
 
+var appLanguage = {}
 var api_url_https = 'https://meet.acaciadata.com/api/v1/meting/'
 var tmp_file_name = ''
-var first_measurement_done = false
 var tempor_values = ''
 var ec_value = ''
 var temperature_value = ''
@@ -35,10 +34,8 @@ var db_file_name = ''
 var is_logging = false
 var path = ''
 var encoded = ''
-var db_file_name = ''
 // var tmp_array_of_records = []
 // var clone_array_for_api = []
-var has_gps = false
 
 class Record {
   /**
@@ -89,10 +86,39 @@ class Record {
   }
 }
 
-function removeFWSlashes(s)
-{
-    return s.replace(/\/$/, "");
+function dutchLanguage(){
+  var d = {}
+  d['table_header'] = '<tr><th>Datum</th><th>EC</th><th>Verstuurd</th></tr>'
+  d['yes'] = 'Ja'
+  d['no'] = 'Nee'
+  d['measure'] = 'Meten'
+  d['history'] = 'Historie'
+  d['syncwarning'] = 'Er zijn onverstuurde metingen<br>druk op Sync als u verbinding heeft.'
+  d['gpswarning'] = 'Zet a.u.b. uw GPS aan'
+  d['internetwarning'] = 'Er is geen internetverbinding'
+  return d
 }
+
+function englishLanguage(){
+  var d = {}
+  d['table_header'] = '<tr><th>Date</th><th>EC</th><th>Sent</th></tr>'
+  d['yes'] = 'Yes'
+  d['no'] = 'No'
+  d['measure'] = 'Measure'
+  d['history'] = 'History'
+  d['syncwarning'] = 'You have unsent measurements: press Sync when you have internet.'
+  d['gpswarning'] = 'Please turn on GPS'
+  d['internetwarning'] = ' There is no internet connection'
+  return d
+}
+
+function embedLanguageInHome(d){
+  var syncwarning = <HTMLDivElement> document.getElementById('warning')
+  syncwarning.innerHTML = d['syncwarning']
+  var send_button = <HTMLInputElement> document.getElementById('send_record')
+  send_button.innerHTML = d['measure']
+}
+
 
 function makeFloat(ec_value) {
     var result = parseFloat(ec_value)
@@ -118,10 +144,10 @@ function addRecordToTable(table, record){
   td_date.innerHTML = datetime
   td_ec.innerHTML = ec
   if (sent){
-    td_sent.innerHTML = 'Ja'
+    td_sent.innerHTML = appLanguage['yes']
   }
   else {
-    td_sent.innerHTML = 'Nee'
+    td_sent.innerHTML = appLanguage['no']
   }
 }
 
@@ -376,7 +402,7 @@ function saveArrayOfRecords(api_response, array_of_records){
   try {
   table = <HTMLTableElement> document.getElementById('history_table')
   alert(table.id)
-  table.innerHTML = '<tr><th>Datum</th><th>EC</th><th>Verstuurd</th></tr>'
+  table.innerHTML = appLanguage['table_header']
   alert('JE HEBT EM!'+table.outerHTML)
   }
   catch(err){
@@ -421,7 +447,7 @@ export class HomePage {
 
   constructor(public navCtrl: NavController, private http:Http) {
 
-      document.addEventListener("deviceready", function(){onDeviceReady(this)}, false);
+      document.addEventListener("deviceready", function(){onDeviceReady()}, false);
 
 // koppel alle sync functionaliteit los (je kan readfilecontesnts, senddata, saveArrayOfRecords)
 // check db files zet sync aan of uit
@@ -433,9 +459,9 @@ export class HomePage {
 
 
 
-      function onDeviceReady(home) {
+      function onDeviceReady() {
         alert("Device Ready");
-        alert('value is = '+ home.value)
+        // alert('value is = '+ home.value)
         uuid = Device.device.uuid;
         // latlon = '(x;y)';
         record_sent = false;
@@ -445,14 +471,21 @@ export class HomePage {
         tmp_file_name = 'temp_db.csv'
         path = base_path+dir_name;
         checkDatabaseFiles()
+        var lang = window.navigator.language
+        if (lang == 'nl-NL'){
+          appLanguage = dutchLanguage()
+        }
+        else{
+          appLanguage = englishLanguage()
+        }
+        embedLanguageInHome(appLanguage)
         Diagnostic.isLocationAvailable().then((resp) => {
           if (!resp){
-            alert('Zet a.u.b. GPS aan')
+            alert(appLanguage['gpswarning'])
           }
         }
-        ).catch(err => alert('isLOC error'+JSON.stringify(err)))
+      ).catch(err => alert('isLOC error'+JSON.stringify(err)))
       };
-
     }
 
   startStop() {
@@ -614,7 +647,7 @@ export class HomePage {
       // if this.online ==
       var networkState = Network.connection
       if (networkState=='none'){
-        alert('Geen internet\n No internet connection')
+        alert(appLanguage['internetwarning'])
       }
       else{
         disableSendButton()

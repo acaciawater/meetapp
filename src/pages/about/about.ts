@@ -1,7 +1,6 @@
 import { Component } from '@angular/core'
 import { NavController } from 'ionic-angular'
 import { File } from 'ionic-native'
-import { Network } from 'ionic-native';
 
 declare var cordova: any
 
@@ -9,6 +8,24 @@ var base_path = ''
 var dir_name = 'AcaciaData'
 var file_name = 'measurement_table.csv'
 var path = ''
+
+var appLanguageAboutTs = {}
+
+function dutchLanguage(){
+  var d = {}
+  d['table_header'] = '<tr><th>Datum</th><th>EC</th><th>Verstuurd</th></tr>'
+  d['yes'] = 'Ja'
+  d['no'] = 'Nee'
+  return d
+}
+
+function englishLanguage(){
+  var d = {}
+  d['table_header'] = '<tr><th>Date</th><th>EC</th><th>Sent</th></tr>'
+  d['yes'] = 'Yes'
+  d['no'] = 'No'
+  return d
+}
 
 function addRecordToTable(table, record){
   // DEZE FUNCTIE STAAT OOK IN HOME.TS
@@ -22,10 +39,10 @@ function addRecordToTable(table, record){
   td_date.innerHTML = datetime
   td_ec.innerHTML = ec
   if (sent){
-    td_sent.innerHTML = 'Ja'
+    td_sent.innerHTML = appLanguageAboutTs['yes']
   }
   else {
-    td_sent.innerHTML = 'Nee'
+    td_sent.innerHTML = appLanguageAboutTs['no']
   }
 }
 
@@ -35,8 +52,7 @@ export function displayHistory(history){
   * reads through saved records and adds max 100 records to table
   */
   var table: HTMLTableElement = <HTMLTableElement> document.getElementById('history_table')
-  table.innerHTML = '<tr><th>Datum</th><th>EC</th><th>Verstuurd</th></tr>'
-
+  table.innerHTML = appLanguageAboutTs['table_header']
   var row = history.split('\n')
   for (var line = 0; ((line <= row.length-2) && (line < 100)); line++){
     var obj = JSON.parse(row[line])
@@ -60,6 +76,13 @@ export class AboutPage {
     function onDeviceReady() {
       base_path = cordova.file.dataDirectory
       path = base_path+dir_name
+      var lang = window.navigator.language
+      if (lang == 'nl-NL'){
+        appLanguageAboutTs = dutchLanguage()
+      }
+      else{
+        appLanguageAboutTs = englishLanguage()
+      }
       File.readAsText(path+'/', file_name).then(history => displayHistory(history)).catch(_ => 'do nothing')
     }
     // window.addEventListener('load',onPageShow)
