@@ -19,7 +19,7 @@ var tempor_values = ''
 var ec_value = ''
 var temperature_value = ''
 var uuid = ''
-var ec_sensor_id = ''
+var ec_sensor_id = null
 var record_sent = false
 var base_path:string = ''
 var dir_name = ''
@@ -101,6 +101,10 @@ function englishLanguage(){
   d['gpswarning'] = 'Please turn on GPS'
   d['internetwarning'] = ' There is no internet connection'
   return d
+}
+
+function hasNumber(myString) {
+  return /\d/.test(myString);
 }
 
 function embedLanguageInHome(d){
@@ -340,14 +344,13 @@ function toggleLogging() {
   * this function is called upon within startStop()
   */
   if (is_logging == false){
-    ec_sensor_id = ''
+    ec_sensor_id = null
     is_logging = true;
     var ss = document.getElementById('startStop');
     ss.innerHTML = 'Stop';
     alert('logging on');
-    if (ec_sensor_id == ''){
-      serial.write("DEVICE\r\n");
-    }
+    alert('write DEVICE')
+    serial.write("DEVICE\r\n");
     serial.write("R\r\n");
   }
   else{
@@ -483,10 +486,15 @@ export class HomePage {
                 var complete_input = tempor_values
                 tempor_values = ''
                 // if there's 'Water' in the output and it doesnt contain a '.' (WaterEC1.0 bug)
-                if (complete_input.indexOf('Water') >= 0 && complete_input.indexOf('.') < 0 ){
-                  ec_sensor_id = complete_input.replace(/\s/g,'')
-                  ec_sensor_id = checkSensorID(ec_sensor_id)
-                  encoded = btoa(ec_sensor_id+':'+ec_sensor_id)
+                if (ec_sensor_id==null){
+                  if (complete_input.indexOf('Water') >= 0 && complete_input.indexOf('.') < 0 && hasNumber(complete_input)){
+                    ec_sensor_id = complete_input.replace(/\s/g,'')
+                    ec_sensor_id = checkSensorID(ec_sensor_id)
+                    encoded = btoa(ec_sensor_id+':'+ec_sensor_id)
+                  }
+                  else{
+                      serial.write("DEVICE\r\n")
+                  }
                 }
                 else if (complete_input.indexOf(',') >= 0){
                   var split_values = complete_input.split(',')
@@ -501,10 +509,10 @@ export class HomePage {
                   }
                   displayValue(ec_value,temperature_value)
                   var ec_float = makeFloat(ec_value)
-                  // alert('ec_float = '+ec_float+' and ec_sensor_id = '+ec_sensor_id)
+                  alert('ec_float = '+ec_float+' and ec_sensor_id = '+ec_sensor_id)
                   if (ec_float>=0 && ec_sensor_id!=''){
                     if (is_logging == true){
-                      // alert('logging true')
+                      alert('logging true')
                       enableSendButton()
                     }
                   }
