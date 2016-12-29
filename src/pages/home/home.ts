@@ -87,6 +87,7 @@ function dutchLanguage(){
   d['syncwarning'] = 'Er zijn onverstuurde metingen<br>druk op Sync als u verbinding heeft.'
   d['gpswarning'] = 'Zet a.u.b. uw GPS aan'
   d['internetwarning'] = 'Er is geen internetverbinding'
+  d['no_sensor'] = 'Geen sensor gevonden'
   return d
 }
 
@@ -100,6 +101,7 @@ function englishLanguage(){
   d['syncwarning'] = 'You have unsent measurements: press Sync when you have internet.'
   d['gpswarning'] = 'Please turn on GPS'
   d['internetwarning'] = ' There is no internet connection'
+  d['no_sensor'] = 'No sensor found'
   return d
 }
 
@@ -537,7 +539,7 @@ export class HomePage {
       );
     },
     function error(evt){
-      alert('Geen sensor gevonden\nNo sensor found')
+      alert(appLanguage['no_sensor'])
     },
     );
   }
@@ -556,7 +558,7 @@ export class HomePage {
       disableSendButton()
       Diagnostic.isLocationAvailable().then((resp) => {
         if (!resp){
-          alert('Zet a.u.b. GPS aan')
+          alert(appLanguage['gpswarning'])
           enableSendButton()
         }
         if (resp){
