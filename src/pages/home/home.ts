@@ -655,8 +655,10 @@ export class HomePage {
         var obj = JSON.parse(row[line])
         var cl = clone(obj)
         tmp_array_of_records.push(obj)
-        delete cl['record_sent']
-        clone_array_for_api.push(cl)
+        if (obj['record_sent']==false){
+          delete cl['record_sent']
+          clone_array_for_api.push(cl)
+        }
       }
       alert('jsut before end sendData')
 
