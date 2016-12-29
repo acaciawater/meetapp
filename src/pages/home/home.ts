@@ -475,7 +475,8 @@ export class HomePage {
               if (s.endsWith('\n')){
                 var complete_input = tempor_values
                 tempor_values = ''
-                if (complete_input.indexOf('Water') >= 0){
+                // if there's 'Water' in the output and it doesnt contain a '.' (WaterEC1.0 bug)
+                if (complete_input.indexOf('Water') >= 0 && complete_input.indexOf('.') < 0 ){
                   ec_sensor_id = complete_input.replace(/\s/g,'')
                   ec_sensor_id = checkSensorID(ec_sensor_id)
                   encoded = btoa(ec_sensor_id+':'+ec_sensor_id)
@@ -493,7 +494,7 @@ export class HomePage {
                   }
                   displayValue(ec_value,temperature_value)
                   var ec_float = makeFloat(ec_value)
-                  if (ec_float>=0){
+                  if (ec_float>=0 && ec_sensor_id!=''){
                     enableSendButton()
                   }
                   if (ec_float<0){
