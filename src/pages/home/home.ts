@@ -9,8 +9,6 @@ import 'rxjs/add/observable/fromEvent';
 import { Network } from 'ionic-native';
 import 'rxjs/add/operator/map';
 
-
-
 declare var serial;
 declare var cordova: any;
 
@@ -20,11 +18,6 @@ var tmp_file_name = ''
 var tempor_values = ''
 var ec_value = ''
 var temperature_value = ''
-// var lat = ''
-// var lon = ''
-// var horizontal_accuracy = null
-// var altitude = null
-// var vertical_accuracy = null
 var uuid = ''
 var ec_sensor_id = ''
 var record_sent = false
@@ -34,8 +27,6 @@ var db_file_name = ''
 var is_logging = false
 var path = ''
 var encoded = ''
-// var tmp_array_of_records = []
-// var clone_array_for_api = []
 
 class Record {
   /**
@@ -119,7 +110,6 @@ function embedLanguageInHome(d){
   send_button.innerHTML = d['measure']
 }
 
-
 function makeFloat(ec_value) {
     var result = parseFloat(ec_value)
     if (isNaN(result)) {
@@ -129,7 +119,6 @@ function makeFloat(ec_value) {
         return result
     }
 }
-
 
 function addRecordToTable(table, record){
   // DEZE FUNCTIE STAAT OOK IN ABOUT.TS
@@ -150,13 +139,6 @@ function addRecordToTable(table, record){
     td_sent.innerHTML = appLanguage['no']
   }
 }
-
-
-
-// function saveMeasurement(){
-//   alert('blaaalala')
-//   this.saveMeasurement()
-// }
 
 function clone(obj) {
   /**
@@ -220,7 +202,6 @@ function checkSyncStatus(){
   .then(text => {
     check(text)})
   .catch(err => alert('checkSync, readAsText failed at : '+path+'/'+db_file_name+'. Error = '+JSON.stringify(err)))
-
 }
 
 function checkDatabaseFiles(){
@@ -244,11 +225,9 @@ function reformatFiles(entries){
   if both are found and tmp is corrupt, remove tmp
   if both are found and tmp is not corrupt, remove db and rename tmp
   */
-  // alert('paths: '+JSON.stringify(entries))
   var db_file = false
   var tmp_db_file = false
   for (var i=0;i<=entries.length-1;i++){
-    // alert('index ='+ i)
     if (entries[i].fullPath=='/AcaciaData/measurement_table.csv'){
       // alert('db found')
       db_file = true
@@ -293,15 +272,6 @@ function reformatFiles(entries){
   }
 }
 
-// function testFunctionality(path, file_name){
-//   // File.readAsText(path+'/', file_name).then(_ => alert("succesfully read")).catch(err => alert('readAsText file reading failed at : '+path+'/'+file_name+'. Error = '+JSON.stringify(err)))
-//   var table :HTMLTableElement
-//   table = <HTMLTableElement> document.getElementById('history_table')
-//   alert(table.id)
-//   var base_path = cordova.file.dataDirectory
-//   alert("base path = "+ base_path)
-// }
-
 function toggleSyncButton(response){
   if (response['status']==202 || response['status']==201 ){
       disableSyncButton()
@@ -324,7 +294,6 @@ function enableSyncButton(){
     sync_button.style.background = '#3688C2'
   }, 4200);
 }
-
 
 function disableSyncButton(){
   var sync_button = <HTMLInputElement> document.getElementById('sync')
@@ -396,7 +365,6 @@ function saveArrayOfRecords(api_response, array_of_records){
   saves the records in a temporary file
   replaces original db file with it
   */
-  // alert('init saveArrayOfRecords')
   alert('init saveArrayOfRecords with resp = '+JSON.parse(JSON.stringify(api_response))['status'])
   var table :HTMLTableElement
   try {
@@ -435,7 +403,6 @@ function saveArrayOfRecords(api_response, array_of_records){
     .catch(err => alert('tmp file saving error: '+err))
 }
 
-
 @Component({
   selector: 'page-home',
   templateUrl: 'home.html'
@@ -446,19 +413,7 @@ export class HomePage {
   public online = null;
 
   constructor(public navCtrl: NavController, private http:Http) {
-
       document.addEventListener("deviceready", function(){onDeviceReady()}, false);
-
-// koppel alle sync functionaliteit los (je kan readfilecontesnts, senddata, saveArrayOfRecords)
-// check db files zet sync aan of uit
-// knop actief non actief
-// meting knop drukken, triggert sync functionaliteit die triggert knop!
-//
-//
-//
-
-
-
       function onDeviceReady() {
         alert("Device Ready");
         // alert('value is = '+ home.value)
@@ -523,11 +478,7 @@ export class HomePage {
                 if (complete_input.indexOf('Water') >= 0){
                   ec_sensor_id = complete_input.replace(/\s/g,'')
                   ec_sensor_id = checkSensorID(ec_sensor_id)
-                  // alert('ec id = '+ec_sensor_id)
                   encoded = btoa(ec_sensor_id+':'+ec_sensor_id)
-                  // headers['Authorization'] = 'Basic '+encoded
-                  // alert('headers = ' +JSON.stringify(headers))
-                  // displayValue('WATER', ec_sensor_id)
                 }
                 else if (complete_input.indexOf(',') >= 0){
                   var split_values = complete_input.split(',')
@@ -636,7 +587,6 @@ export class HomePage {
       alert('init writeFile')
       ec_data += '\n'
       tmp_data += '\n'
-      // File.writeFile(path, file_name, data, false).then(_ => alert('writeFile success path = '+path+' file_name = '+file_name+' data = '+data)).catch(err => alert('writeFile '+JSON.stringify(err)+ ' path = '+path+' file_name = '+file_name+' data = '+data));
       File.writeFile(path, file_name, ec_data, {append:true})
         .then(_ => File.writeFile(path, file_name, tmp_data, {append:true})
           .then(_ => this.readFileContents(path, file_name))
@@ -669,11 +619,6 @@ export class HomePage {
       * expects content of saved file as string
       * makes two arrays of dictionaries by cloning, one to send, other to save
       */
-
-
-
-
-
       alert('init sendData')
       var tmp_array_of_records = []
       var body = ''
@@ -723,22 +668,4 @@ export class HomePage {
         alert('ended up in else clause somehow')
       }
   }
-
-    // removeDbFile(){
-    //   // TESTING
-    //   File.removeFile(path, db_file_name).then(str => alert(JSON.stringify(str)))
-    // }
-    // checkDir(){
-    //   /**debug*/
-    //   File.checkDir(base_path, dir_name).then(_ => alert(base_path+dir_name+' is found')).catch(err => alert('checkDir '+JSON.stringify(err)));
-    // }
-    // checkFile(){
-    //   /**debug*/
-    //   File.checkFile(path+'/', db_file_name).then(_ => alert('checkFile '+path+db_file_name+' found')).catch(err => alert('checkFile '+path+'/'+db_file_name+' error ='+JSON.stringify(err)));
-    // }
-    // alertFileContents(){
-    //   /**debug*/
-    //   File.readAsText(path+'/', db_file_name).then(succ => alert('readAsText '+path+'/'+db_file_name+' '+succ)).catch(err => alert('readAsText '+path+'/'+db_file_name+' '+JSON.stringify(err)))
-    // }
-
 }
