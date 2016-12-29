@@ -340,6 +340,7 @@ function toggleLogging() {
   * this function is called upon within startStop()
   */
   if (is_logging == false){
+    ec_sensor_id = ''
     is_logging = true;
     var ss = document.getElementById('startStop');
     ss.innerHTML = 'Stop';
@@ -397,7 +398,12 @@ function saveArrayOfRecords(api_response, array_of_records){
   File.writeFile(path, tmp_file_name, body, {append:false})
     .then(_ => File.removeFile(path, db_file_name)
       .then(_ => File.moveFile(path, tmp_file_name, path, db_file_name)
-        .then(path => enableSendButton())
+        .then(() => {
+          if (is_logging == true){
+            alert('logging true')
+            enableSendButton()
+          }
+        })
         .catch(err => alert('tmp to db file replacement error: '+err)))
       .catch(err => alert('db file removal error: '+err)))
     .catch(err => alert('tmp file saving error: '+err))
@@ -449,7 +455,8 @@ export class HomePage {
     *  starts the measuring process by
     *  1 requesting permission 2 opening port 3 registering a read callback, 4 toggling toggleLogging()
     */
-    ec_value = '';
+    ec_value = ''
+
     if (is_logging == false){
     serial.requestPermission({vid: 9025, pid: 32845, driver: 'CdcAcmSerialDriver'},
     // if permission is granted
@@ -494,8 +501,12 @@ export class HomePage {
                   }
                   displayValue(ec_value,temperature_value)
                   var ec_float = makeFloat(ec_value)
+                  // alert('ec_float = '+ec_float+' and ec_sensor_id = '+ec_sensor_id)
                   if (ec_float>=0 && ec_sensor_id!=''){
-                    enableSendButton()
+                    if (is_logging == true){
+                      // alert('logging true')
+                      enableSendButton()
+                    }
                   }
                   if (ec_float<0){
                     disableSendButton()
@@ -508,22 +519,22 @@ export class HomePage {
             },
           // error attaching the callback
             function error(evt){
-              alert('A '+JSON.stringify(evt));
+              alert('A '+JSON.stringify(evt))
             }
            );
            toggleLogging();
         }, function error(evt){
-          alert('B '+JSON.stringify(evt));
+          alert('B '+JSON.stringify(evt))
         }
       );
     },
     function error(evt){
-      alert('Geen sensor gevonden\nNo sensor found');
+      alert('Geen sensor gevonden\nNo sensor found')
     },
     );
   }
   else{
-     toggleLogging();
+    toggleLogging()
   }
 }
 
@@ -554,26 +565,31 @@ export class HomePage {
       * checks to see if the app already created a directory to save file in and creates it if needed
       * triggers writeFile
       */
-      alert('init saveMeasurement with EC set to = '+ec_value)
-
-      var latit = location.coords.latitude
-      var longit = location.coords.longitude
-      var lat = latit.toString()
-      var lon = longit.toString()
-      var horizontal_accuracy = location.coords.accuracy
-      var altitude = location.coords.altitude
-      var vertical_accuracy = location.coords.altitudeAccuracy
-      var datetime = getCurrentDateTime()
-      var ec_entity = 'EC'
-      var ec_unit = 'µS/cm'
-      var tmp_entity = 'temperature'
-      var tmp_unit = '°C'
-      var ec_record = new Record(ec_sensor_id, datetime, ec_value, ec_entity, ec_unit, lat, lon,horizontal_accuracy,altitude,vertical_accuracy, uuid, record_sent)
-      var tmp_record = new Record(ec_sensor_id, datetime, temperature_value, tmp_entity, tmp_unit, lat, lon,horizontal_accuracy,altitude,vertical_accuracy, uuid, record_sent)
-      var ec_data = ec_record.getRecord()
-      var tmp_data = tmp_record.getRecord()
-      File.checkDir(base_path, dir_name).then(_ => this.writeFile(path, db_file_name, ec_data, tmp_data)).catch(err => this.newDirAndFile(base_path, dir_name, path, db_file_name, ec_data, tmp_data))
+      if (ec_value!=''){
+        alert('init saveMeasurement with EC set to = '+ec_value)
+        var latit = location.coords.latitude
+        var longit = location.coords.longitude
+        var lat = latit.toString()
+        var lon = longit.toString()
+        var horizontal_accuracy = location.coords.accuracy
+        var altitude = location.coords.altitude
+        var vertical_accuracy = location.coords.altitudeAccuracy
+        var datetime = getCurrentDateTime()
+        var ec_entity = 'EC'
+        var ec_unit = 'µS/cm'
+        var tmp_entity = 'temperature'
+        var tmp_unit = '°C'
+        var ec_record = new Record(ec_sensor_id, datetime, ec_value, ec_entity, ec_unit, lat, lon,horizontal_accuracy,altitude,vertical_accuracy, uuid, record_sent)
+        var tmp_record = new Record(ec_sensor_id, datetime, temperature_value, tmp_entity, tmp_unit, lat, lon,horizontal_accuracy,altitude,vertical_accuracy, uuid, record_sent)
+        var ec_data = ec_record.getRecord()
+        var tmp_data = tmp_record.getRecord()
+        File.checkDir(base_path, dir_name).then(_ => this.writeFile(path, db_file_name, ec_data, tmp_data)).catch(err => this.newDirAndFile(base_path, dir_name, path, db_file_name, ec_data, tmp_data))
+      }
+      else{
+        alert('savemeasruemnt fail cause ec value = '+ec_value)
+      }
     }
+
     newDirAndFile(base_path, dir_name, path, file_name, ec_data, tmp_data){
       /**
       * creates new directory and triggers writeFile()
