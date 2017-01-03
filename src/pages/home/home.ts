@@ -35,6 +35,7 @@ class Record {
   */
   sensor_id:string;
   datetime: string;
+  timestamp: number;
   value: string;
   entity: string;
   unit: string;
@@ -45,10 +46,11 @@ class Record {
   vertical_accuracy:number;
   uuid: string;
   record_sent: boolean;
-  constructor(  sensor_id:string, datetime:string, value:string, entity:string, unit:string, lat:string, lon:string,
+  constructor(  sensor_id:string, datetime:string, timestamp: number, value:string, entity:string, unit:string, lat:string, lon:string,
                 horizontal_accuracy:number,altitude: number,vertical_accuracy:number, uuid:string, record_sent:boolean){
     this.sensor_id = sensor_id;
     this.datetime = datetime;
+    this.timestamp = timestamp;
     this.value = value;
     this.entity = entity;
     this.unit = unit;
@@ -64,6 +66,7 @@ class Record {
     var record = new Object();
     record['sensor'] = this.sensor_id;
     record['date'] = this.datetime;
+    record['timestamp'] = this.timestamp;
     record['value'] = this.value;
     record['entity'] = this.entity;
     record['unit'] = this.unit;
@@ -193,11 +196,15 @@ function getCurrentDateTime(){
   var hour = a.getHours();
   var min = a.getMinutes();
   var sec = a.getSeconds();
-  var time = month + '-' + day + '-' + year + ' ' + hour + ':' + min + ':' + sec ;
-  return time;
+  var datetime = month + '-' + day + '-' + year + ' ' + hour + ':' + min + ':' + sec ;
+  return {'datetime':datetime, 'timestamp':unix_timestamp}
 }
 
 function checkSyncStatus(){
+  /**
+  is triggered on deviceready and checks if there are unsent records
+  if so, then enables the sync button
+  */
   function check(text){
     var row = text.split('\n')
     for (var line = row.length-2; line >= 0; line--){
@@ -369,6 +376,12 @@ function toggleLogging() {
   }
 }
 
+function sortArrayByDate(array) {
+  array.sort(function (a, b) {
+    return -1*(b.timestamp - a.timestamp);
+  });
+}
+
 function saveArrayOfRecords(api_response, array_of_records){
   /**
   expects the api_response
@@ -392,13 +405,15 @@ function saveArrayOfRecords(api_response, array_of_records){
   var response = JSON.parse(JSON.stringify(api_response))
   toggleSyncButton(response)
   var body = ''
-  for (var i=0; i<=array_of_records.length-1; i++){
+  sortArrayByDate(array_of_records)
+  for (var i=0; i<=array_of_records.length-1 && i<50; i++){
     var x = array_of_records[i]
     if (response['status']==202 || response['status']==201 ){
       x['record_sent']=true
     }
     if (x['entity']=='EC'){
       if(table !== null){
+        // DebugAlert(JSON.stringify(x))
         addRecordToTable(table, x)
       }
     }
@@ -593,13 +608,15 @@ export class HomePage {
         var horizontal_accuracy = geolocation.coords.accuracy
         var altitude = geolocation.coords.altitude
         var vertical_accuracy = geolocation.coords.altitudeAccuracy
-        var datetime = getCurrentDateTime()
+        var time = getCurrentDateTime()
+        var datetime = time['datetime']
+        var timestamp = time['timestamp']
         var ec_entity = 'EC'
         var ec_unit = 'µS/cm'
         var tmp_entity = 'temperature'
         var tmp_unit = '°C'
-        var ec_record = new Record(ec_sensor_id, datetime, ec_value, ec_entity, ec_unit, lat, lon,horizontal_accuracy,altitude,vertical_accuracy, uuid, record_sent)
-        var tmp_record = new Record(ec_sensor_id, datetime, temperature_value, tmp_entity, tmp_unit, lat, lon,horizontal_accuracy,altitude,vertical_accuracy, uuid, record_sent)
+        var ec_record = new Record(ec_sensor_id, datetime, timestamp, ec_value, ec_entity, ec_unit, lat, lon,horizontal_accuracy,altitude,vertical_accuracy, uuid, record_sent)
+        var tmp_record = new Record(ec_sensor_id, datetime, timestamp, temperature_value, tmp_entity, tmp_unit, lat, lon,horizontal_accuracy,altitude,vertical_accuracy, uuid, record_sent)
         var ec_data = ec_record.getRecord()
         var tmp_data = tmp_record.getRecord()
         File.checkDir(base_path, dir_name).then(_ => this.writeFile(path, db_file_name, ec_data, tmp_data)).catch(err => this.newDirAndFile(base_path, dir_name, path, db_file_name, ec_data, tmp_data))
@@ -655,7 +672,7 @@ export class HomePage {
       * expects content of saved file as string
       * makes two arrays of dictionaries by cloning, one to send, other to save
       */
-      DebugAlert('init sendData')
+      DebugAlert('init sendData with text:\n'+text)
       var tmp_array_of_records = []
       var body = ''
       var clone_array_for_api = []
