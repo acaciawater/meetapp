@@ -12,6 +12,7 @@ import 'rxjs/add/operator/map';
 declare var serial;
 declare var cordova: any;
 
+var debug = true
 var appLanguage = {}
 var api_url_https = 'https://meet.acaciadata.com/api/v1/meting/'
 var tmp_file_name = ''
@@ -27,7 +28,7 @@ var db_file_name = ''
 var is_logging = false
 var path = ''
 var encoded = ''
-
+var geolocation = null
 class Record {
   /**
   * creates a single record, which can be saved in a file
@@ -74,6 +75,12 @@ class Record {
     record['phone'] = this.uuid;
     record['record_sent'] = this.record_sent;
     return JSON.stringify(record);
+  }
+}
+
+function DebugAlert(s){
+  if (debug){
+    alert(s)
   }
 }
 
@@ -128,7 +135,7 @@ function makeFloat(ec_value) {
 
 function addRecordToTable(table, record){
   // DEZE FUNCTIE STAAT OOK IN ABOUT.TS
-  alert('init add recorda to table')
+  DebugAlert('init addRecordToTable')
   var datetime = record['date']
   var ec = record['value']
   var sent = record['record_sent']
@@ -180,7 +187,6 @@ function getCurrentDateTime(){
   */
   var unix_timestamp = + new Date()
   var a = new Date(unix_timestamp);
-  // var months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
   var year = a.getFullYear();
   var month = a.getMonth()+1;
   var day = a.getDate();
@@ -207,7 +213,7 @@ function checkSyncStatus(){
   File.readAsText(path+'/', db_file_name)
   .then(text => {
     check(text)})
-  .catch(err => alert('checkSync, readAsText failed at : '+path+'/'+db_file_name+'. Error = '+JSON.stringify(err)))
+  .catch(err => alert('CheckSync, readAsText failed at: '+path+'/'+db_file_name+'. Error = '+JSON.stringify(err)))
 }
 
 function checkDatabaseFiles(){
@@ -222,7 +228,7 @@ function checkDatabaseFiles(){
 }
 
 function reformatFiles(entries){
-  alert(JSON.stringify(entries))
+  DebugAlert(JSON.stringify(entries))
   /**
   expects files found in the application directory
   if none are found, its ok (first time app has been installed)
@@ -245,7 +251,7 @@ function reformatFiles(entries){
   }
   if (db_file&&!tmp_db_file){
     // if only db file
-    alert(db_file+'\n'+tmp_db_file)
+    DebugAlert(db_file+'\n'+tmp_db_file)
     checkSyncStatus()
   }
   if (!db_file&&!tmp_db_file){
@@ -256,7 +262,7 @@ function reformatFiles(entries){
     // if only tmp file rename it
           File.moveFile(path, tmp_file_name, path, db_file_name)
           .then(_ => checkSyncStatus())
-          .catch(err => alert('tmp to db file replacement error: '+JSON.stringify(err)))
+          .catch(err => alert('Tmp to DB file replacement error: '+JSON.stringify(err)))
   }
   if(db_file&&tmp_db_file){
     // if both exist
@@ -268,13 +274,13 @@ function reformatFiles(entries){
           .then(_ =>
             File.moveFile(path, tmp_file_name, path, db_file_name)
               .then(_ => checkSyncStatus())
-              .catch(err => alert('error moving tmp to db file, error = '+JSON.stringify(err))))
-          .catch(err => alert('error removing file, '+JSON.stringify(err))))
+              .catch(err => alert('Error moving tmp to db file, error = '+JSON.stringify(err))))
+          .catch(err => alert('Error removing file, '+JSON.stringify(err))))
       // file is corrupt
       .catch(_ =>
         File.removeFile(path, tmp_file_name)
           .then(succ => checkSyncStatus())
-          .catch(err => alert('failed removing file'+JSON.stringify(err))))
+          .catch(err => alert('Failed removing file'+JSON.stringify(err))))
   }
 }
 
@@ -350,8 +356,8 @@ function toggleLogging() {
     is_logging = true;
     var ss = document.getElementById('startStop');
     ss.innerHTML = 'Stop';
-    alert('logging on');
-    alert('write DEVICE')
+    DebugAlert('logging on');
+    DebugAlert('write DEVICE')
     serial.write("DEVICE\r\n");
     serial.write("R\r\n");
   }
@@ -359,7 +365,7 @@ function toggleLogging() {
     is_logging = false;
     var ss = document.getElementById('startStop');
     ss.innerHTML = 'Start';
-    alert('logging off');
+    DebugAlert('logging off');
   }
 }
 
@@ -371,16 +377,16 @@ function saveArrayOfRecords(api_response, array_of_records){
   saves the records in a temporary file
   replaces original db file with it
   */
-  alert('init saveArrayOfRecords with resp = '+JSON.parse(JSON.stringify(api_response))['status'])
+  DebugAlert('init saveArrayOfRecords with resp = '+JSON.parse(JSON.stringify(api_response))['status'])
   var table :HTMLTableElement
   try {
   table = <HTMLTableElement> document.getElementById('history_table')
-  alert(table.id)
+  DebugAlert(table.id)
   table.innerHTML = appLanguage['table_header']
-  alert('JE HEBT EM!'+table.outerHTML)
+  DebugAlert('JE HEBT EM!'+table.outerHTML)
   }
   catch(err){
-    alert('err = '+err.message)
+    DebugAlert('err = '+err.message)
   }
 
   var response = JSON.parse(JSON.stringify(api_response))
@@ -405,13 +411,13 @@ function saveArrayOfRecords(api_response, array_of_records){
       .then(_ => File.moveFile(path, tmp_file_name, path, db_file_name)
         .then(() => {
           if (is_logging == true){
-            alert('logging true')
+            DebugAlert('logging true')
             enableSendButton()
           }
         })
-        .catch(err => alert('tmp to db file replacement error: '+err)))
-      .catch(err => alert('db file removal error: '+err)))
-    .catch(err => alert('tmp file saving error: '+err))
+        .catch(err => alert('saveArrayOfRecords: Tmp to db file replacement error: '+err)))
+      .catch(err => alert('saveArrayOfRecords: db file removal error: '+err)))
+    .catch(err => alert('saveArrayOfRecords: tmp file saving error: '+err))
 }
 
 @Component({
@@ -426,7 +432,7 @@ export class HomePage {
   constructor(public navCtrl: NavController, private http:Http) {
       document.addEventListener("deviceready", function(){onDeviceReady()}, false);
       function onDeviceReady() {
-        alert("Device Ready");
+        DebugAlert("Device Ready");
         // alert('value is = '+ home.value)
         uuid = Device.device.uuid;
         // latlon = '(x;y)';
@@ -450,7 +456,7 @@ export class HomePage {
             alert(appLanguage['gpswarning'])
           }
         }
-      ).catch(err => alert('isLOC error'+JSON.stringify(err)))
+      ).catch(err => alert('GPS error '+JSON.stringify(err)))
       };
     }
 
@@ -462,90 +468,105 @@ export class HomePage {
     */
     ec_value = ''
 
-    if (is_logging == false){
-    serial.requestPermission({vid: 9025, pid: 32845, driver: 'CdcAcmSerialDriver'},
-    // if permission is granted
-    function success(){
-      var opts = {"baudRate":9600, "dataBits":8, "stopBits":1, "parity":0, "dtr":true, 'rts':true}
-      //  open serial port
-      serial.open(opts,
-        // if port is succsefully opened
-        function success(){
-          alert("Port Succesfully Opened");
-          // register the read callback
-           serial.registerReadCallback(
-             function success(data){
-               /**
-               * responds to responses from the sensor
-               *  converts this data to string and concatenates these strings until response has fully arrived
-               *  after first EC and temperature measurements have succesfully been assigned to their global vars it enables enableSendButton()
-               *  sends a request for a measurement to the sensor if global var is_logging is true (this triggers a loop in the ReadCallback)
-               */
-              var view = new Uint8Array(data);
-              var s = String.fromCharCode.apply(String,view);
-              tempor_values += s;
-              if (s.endsWith('\n')){
-                var complete_input = tempor_values
-                tempor_values = ''
-                // if there's 'Water' in the output and it doesnt contain a '.' (WaterEC1.0 bug)
-                if (ec_sensor_id==null){
-                  if (complete_input.indexOf('Water') >= 0 && complete_input.indexOf('.') < 0 && hasNumber(complete_input)){
-                    ec_sensor_id = complete_input.replace(/\s/g,'')
-                    ec_sensor_id = checkSensorID(ec_sensor_id)
-                    encoded = btoa(ec_sensor_id+':'+ec_sensor_id)
-                  }
-                  else{
-                      serial.write("DEVICE\r\n")
-                  }
-                }
-                else if (complete_input.indexOf(',') >= 0){
-                  var split_values = complete_input.split(',')
-                  temperature_value = split_values[0]
-                  ec_value = split_values[1].replace('\r\n','')
-                  var ecv = parseFloat(split_values[1].replace('\r\n',''))
-                  if(ecv>=1000.0){
-                    ec_value = Math.round(ecv).toString()
-                  }
-                  else{
-                    ec_value = ecv.toString()
-                  }
-                  displayValue(ec_value,temperature_value)
-                  var ec_float = makeFloat(ec_value)
-                  alert('ec_float = '+ec_float+' and ec_sensor_id = '+ec_sensor_id)
-                  if (ec_float>=0 && ec_sensor_id!=''){
-                    if (is_logging == true){
-                      alert('logging true')
-                      enableSendButton()
+
+  Diagnostic.isLocationAvailable().then((resp) => {
+      if (!resp){
+        alert(appLanguage['gpswarning'])
+        enableSendButton()
+      }
+      if (resp){
+        Geolocation.getCurrentPosition().then((resp) => {
+        geolocation = resp
+
+        if (is_logging == false){
+          serial.requestPermission({vid: 9025, pid: 32845, driver: 'CdcAcmSerialDriver'},
+          // if permission is granted
+          function success(){
+            var opts = {"baudRate":9600, "dataBits":8, "stopBits":1, "parity":0, "dtr":true, 'rts':true}
+            //  open serial port
+            serial.open(opts,
+              // if port is succsefully opened
+              function success(){
+                DebugAlert("Port Succesfully Opened");
+                // register the read callback
+                serial.registerReadCallback(
+                  function success(data){
+                    /**
+                    * responds to responses from the sensor
+                    *  converts this data to string and concatenates these strings until response has fully arrived
+                    *  after first EC and temperature measurements have succesfully been assigned to their global vars it enables enableSendButton()
+                    *  sends a request for a measurement to the sensor if global var is_logging is true (this triggers a loop in the ReadCallback)
+                    */
+                    var view = new Uint8Array(data);
+                    var s = String.fromCharCode.apply(String,view);
+                    tempor_values += s;
+                    if (s.endsWith('\n')){
+                      var complete_input = tempor_values
+                      tempor_values = ''
+                      // if there's 'Water' in the output and it doesnt contain a '.' (WaterEC1.0 bug)
+                      if (ec_sensor_id==null){
+                        if (complete_input.indexOf('Water') >= 0 && complete_input.indexOf('.') < 0 && hasNumber(complete_input)){
+                          ec_sensor_id = complete_input.replace(/\s/g,'')
+                          ec_sensor_id = checkSensorID(ec_sensor_id)
+                          encoded = btoa(ec_sensor_id+':'+ec_sensor_id)
+                        }
+                        else{
+                          serial.write("DEVICE\r\n")
+                        }
+                      }
+                      else if (complete_input.indexOf(',') >= 0){
+                        var split_values = complete_input.split(',')
+                        temperature_value = split_values[0]
+                        ec_value = split_values[1].replace('\r\n','')
+                        var ecv = parseFloat(split_values[1].replace('\r\n',''))
+                        if(ecv>=1000.0){
+                          ec_value = Math.round(ecv).toString()
+                        }
+                        else{
+                          ec_value = ecv.toString()
+                        }
+                        displayValue(ec_value,temperature_value)
+                        var ec_float = makeFloat(ec_value)
+                        // DebugAlert('ec_float = '+ec_float+' and ec_sensor_id = '+ec_sensor_id)
+                        if (ec_float>=0 && ec_sensor_id!=''){
+                          if (is_logging == true){
+                            // DebugAlert('logging true')
+                            enableSendButton()
+                          }
+                        }
+                        if (ec_float<0){
+                          disableSendButton()
+                        }
+                      }
+                      if (is_logging){
+                        serial.write("R\r\n")
+                      }
                     }
+                  },
+                  // error attaching the callback
+                  function error(evt){
+                    DebugAlert('A '+JSON.stringify(evt))
                   }
-                  if (ec_float<0){
-                    disableSendButton()
-                  }
-                }
-                if (is_logging){
-                  serial.write("R\r\n")
-                }
+                );
+                toggleLogging();
+              }, function error(evt){
+                DebugAlert('B '+JSON.stringify(evt))
               }
-            },
-          // error attaching the callback
-            function error(evt){
-              alert('A '+JSON.stringify(evt))
-            }
-           );
-           toggleLogging();
-        }, function error(evt){
-          alert('B '+JSON.stringify(evt))
-        }
-      );
-    },
-    function error(evt){
-      alert(appLanguage['no_sensor'])
-    },
-    );
-  }
-  else{
-    toggleLogging()
-  }
+            );
+          },
+          function error(evt){
+            alert(appLanguage['no_sensor'])
+          },
+        );
+      }
+      else{
+        toggleLogging()
+      }
+
+        }).catch(error => alert('GPS error.\n'+ error))
+      }
+    }).catch(err => alert('GPS error '+JSON.stringify(err)))
+
 }
 
     startSavingSendingProcess(){
@@ -554,36 +575,24 @@ export class HomePage {
       * this function triggers a cascade effect of chained functions that return promises. the order of wich is:
       * 1 getCurrentPosition, 2saveMeasurement() , 3writeFile(), 4readFileContents), 5sendData(), 6HTTP.post()
       */
-
       disableSendButton()
-      Diagnostic.isLocationAvailable().then((resp) => {
-        if (!resp){
-          alert(appLanguage['gpswarning'])
-          enableSendButton()
-        }
-        if (resp){
-          Geolocation.getCurrentPosition().then((resp) => {
-            this.saveMeasurement(resp)
-          }).catch(error => alert('GPS signaal error.\n'+ error))
-        }
-      }
-      ).catch(err => alert('isLOC error'+JSON.stringify(err)))
+      this.saveMeasurement()
     }
 
-    saveMeasurement(location){
+    saveMeasurement(){
       /**
       * checks to see if the app already created a directory to save file in and creates it if needed
       * triggers writeFile
       */
       if (ec_value!=''){
-        alert('init saveMeasurement with EC set to = '+ec_value)
-        var latit = location.coords.latitude
-        var longit = location.coords.longitude
+        DebugAlert('init saveMeasurement with EC set to = '+ec_value)
+        var latit = geolocation.coords.latitude
+        var longit = geolocation.coords.longitude
         var lat = latit.toString()
         var lon = longit.toString()
-        var horizontal_accuracy = location.coords.accuracy
-        var altitude = location.coords.altitude
-        var vertical_accuracy = location.coords.altitudeAccuracy
+        var horizontal_accuracy = geolocation.coords.accuracy
+        var altitude = geolocation.coords.altitude
+        var vertical_accuracy = geolocation.coords.altitudeAccuracy
         var datetime = getCurrentDateTime()
         var ec_entity = 'EC'
         var ec_unit = 'µS/cm'
@@ -596,7 +605,7 @@ export class HomePage {
         File.checkDir(base_path, dir_name).then(_ => this.writeFile(path, db_file_name, ec_data, tmp_data)).catch(err => this.newDirAndFile(base_path, dir_name, path, db_file_name, ec_data, tmp_data))
       }
       else{
-        alert('savemeasruemnt fail cause ec value = '+ec_value)
+        DebugAlert('savemeasruemnt fail cause ec value = '+ec_value)
       }
     }
 
@@ -604,14 +613,14 @@ export class HomePage {
       /**
       * creates new directory and triggers writeFile()
       */
-      alert('init newDirAndFile');
+      DebugAlert('init newDirAndFile');
       File.createDir(base_path, dir_name, false).then(_ => this.writeFile(path, file_name, ec_data, tmp_data)).catch(err => alert('createDir '+base_path+dir_name+' '+JSON.stringify(err)));
     }
     writeFile(path, file_name, ec_data, tmp_data){
       /**
       * writes to file and triggers readFileContents)
       */
-      alert('init writeFile')
+      DebugAlert('init writeFile')
       ec_data += '\n'
       tmp_data += '\n'
       File.writeFile(path, file_name, ec_data, {append:true})
@@ -646,7 +655,7 @@ export class HomePage {
       * expects content of saved file as string
       * makes two arrays of dictionaries by cloning, one to send, other to save
       */
-      alert('init sendData')
+      DebugAlert('init sendData')
       var tmp_array_of_records = []
       var body = ''
       var clone_array_for_api = []
@@ -660,20 +669,20 @@ export class HomePage {
           clone_array_for_api.push(cl)
         }
       }
-      alert('jsut before end sendData')
+      DebugAlert('jsut before end sendData')
 
       if (encoded==''){
         ec_sensor_id = obj['sensor']
         encoded = btoa(ec_sensor_id+':'+ec_sensor_id)
       }
-      alert('ec_sensor_id ='+ec_sensor_id)
+      DebugAlert('ec_sensor_id ='+ec_sensor_id)
       var headers = new Headers();
       var auth = 'Basic '+encoded
       headers.append('Authorization' , auth);
       headers.append('Content-Type', 'application/json');
 
       if (Network.connection!=='none'){
-        alert('before this.http')
+        DebugAlert('before this.http')
         this.http
           .get('https://meet.acaciadata.com/api/v1/sensor/?sensor_id='+ec_sensor_id, {headers:headers})
           .map(response => response.json())
@@ -684,7 +693,7 @@ export class HomePage {
                 clone_array_for_api[ob]['sensor_pk'] = sensor_pk
               }
               body = JSON.stringify({objects:clone_array_for_api})
-              alert(encoded+'\n'+JSON.stringify(headers)+'\n'+body)
+              DebugAlert(encoded+'\n'+JSON.stringify(headers)+'\n'+body)
               this.http.patch(api_url_https, body, {headers: headers}).subscribe(api_response => saveArrayOfRecords(api_response, tmp_array_of_records))
             }
           )
@@ -694,7 +703,7 @@ export class HomePage {
         saveArrayOfRecords({'status': 'nointernet'}, tmp_array_of_records)
       }
       else{
-        alert('ended up in else clause somehow')
+        DebugAlert('sendData else clause')
       }
   }
 }
