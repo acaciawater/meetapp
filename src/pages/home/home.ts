@@ -12,7 +12,7 @@ import 'rxjs/add/operator/map';
 declare var serial;
 declare var cordova: any;
 
-var debug = true
+var debug = false
 var appLanguage = {}
 var api_url_https = 'https://meet.acaciadata.com/api/v1/meting/'
 var tmp_file_name = ''
@@ -382,6 +382,12 @@ function sortArrayByDate(array) {
   });
 }
 
+function cutoffArray(array, x) {
+  // expects an array and an int
+  // slices the array from the nth elemetn until the end
+  return array.slice(Math.max(array.length - x, 0))
+}
+
 function saveArrayOfRecords(api_response, array_of_records){
   /**
   expects the api_response
@@ -406,7 +412,8 @@ function saveArrayOfRecords(api_response, array_of_records){
   toggleSyncButton(response)
   var body = ''
   sortArrayByDate(array_of_records)
-  for (var i=0; i<=array_of_records.length-1 && i<50; i++){
+  array_of_records = cutoffArray(array_of_records, 50)
+  for (var i=0; i<=array_of_records.length-1; i++){
     var x = array_of_records[i]
     if (response['status']==202 || response['status']==201 ){
       x['record_sent']=true
