@@ -3,9 +3,6 @@ import { Component } from '@angular/core';
 import { HomePage } from '../home/home';
 import { AboutPage } from '../about/about';
 
-var appLanguageTabsTs = {}
-
-
 @Component({
   templateUrl: 'tabs.html'
 })

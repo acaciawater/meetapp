@@ -1,7 +1,7 @@
 {
-  "name": "ionic-hello-world",
-  "author": "Ionic Framework",
-  "homepage": "http://ionicframework.com/",
+  "name": "WatermeetApp",
+  "author": "stephane",
+  "homepage": "",
   "private": true,
   "scripts": {
     "build": "ionic-app-scripts build",
@@ -33,7 +33,7 @@
     "@ionic/app-scripts": "0.0.38",
     "typescript": "2.0.6"
   },
-  "description": "AcaciaMeet: An Ionic project",
+  "description": "Watermeet App: meet de saliniteit van water.",
   "cordovaPlugins": [
     "cordova-plugin-device",
     "cordova-plugin-console",
